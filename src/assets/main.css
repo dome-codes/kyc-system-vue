@@ -1,0 +1,8 @@
+@import './base.css';
+@import "tailwindcss";
+@source "./src/**/*.{vue,js,ts,jsx,tsx}";
+
+#app {
+  min-height: 100vh;
+  font-weight: normal;
+}
