@@ -17,14 +17,13 @@ const handleFormSubmit = async (entity: string, questions: KycQuestion[]) => {
     await kycStore.createReport(entity, questions)
     isReportPopupOpen.value = true
   } catch (error) {
-    console.error('Error creating report:', error)
+    // Error handling
   }
 }
 
 const handleReportConfirm = (report: KycReport) => {
   kycStore.confirmReport(report)
   isReportPopupOpen.value = false
-  // Reset form after confirmation
   formResetTrigger.value++
 }
 
@@ -44,8 +43,8 @@ const handleReportCancel = () => {
               <span class="text-white font-bold text-lg">O</span>
             </div>
             <div>
-              <h1 class="text-xl font-semibold text-gray-900">KYC Compliance System</h1>
-              <p class="text-sm text-gray-500">Know Your Customer Due Diligence</p>
+              <h1 class="text-xl font-semibold text-gray-900">Mieter Recherche Quick Check</h1>
+              <p class="text-sm text-gray-500">Schnelle Unternehmensrecherche</p>
             </div>
           </div>
           <div class="flex items-center gap-2 text-sm text-gray-500">
@@ -67,11 +66,10 @@ const handleReportCancel = () => {
     <main class="flex justify-center px-4 py-8">
       <div class="max-w-4xl w-full">
         <div class="mb-8 text-center w-full">
-          <h2 class="text-3xl font-bold text-gray-900 mb-4">Unternehmens Due Diligence Bericht</h2>
+          <h2 class="text-3xl font-bold text-gray-900 mb-4">Unternehmensrecherche Quick Check</h2>
           <p class="text-gray-600 mb-8 max-w-3xl mx-auto text-lg leading-relaxed">
-            Geben Sie Unternehmensinformationen und Compliance-Fragen ein, um einen umfassenden KYC-Bericht zu
-            erstellen. Das System analysiert verfügbare Datenquellen und liefert detaillierte Ergebnisse zur
-            Überprüfung.
+            Führen Sie eine schnelle Unternehmensrecherche durch. Geben Sie Unternehmensinformationen ein und
+            erhalten Sie einen kompakten Überblick über relevante Daten und Risikobewertungen.
           </p>
         </div>
 

@@ -1,5 +1,5 @@
+import type { CompanySearchResult, KycQuestion, KycReport } from '@/types/kyc'
 import axios from 'axios'
-import type { KycQuestion, KycReport, CompanySearchResult } from '@/types/kyc'
 
 // Mock API - später durch echte API ersetzen
 const API_BASE_URL = 'http://localhost:3001/api'
@@ -11,18 +11,21 @@ const api = axios.create({
 
 export const kycApi = {
   async createReport(entity: string, questions: KycQuestion[]): Promise<KycReport> {
-    // Mock implementation - simuliert API-Aufruf
     return new Promise((resolve) => {
       setTimeout(() => {
         const mockAnswers: Record<string, string> = {}
-        questions.forEach((question, index) => {
+        const mockSources: Record<string, string> = {}
+        questions.forEach((question) => {
           mockAnswers[question.id] = `Mock-Antwort für: ${question.text}`
+          mockSources[question.id] = `Handelsregister`
+          mockSources[question.id + '_link'] = `https://handelsregister.de/example/${question.id}`
         })
 
         const mockReport: KycReport = {
           id: `report_${Date.now()}`,
           entity,
           answers: mockAnswers,
+          sources: mockSources,
           status: 'pending_confirmation',
           timestamp: new Date().toISOString(),
           questions: questions,
@@ -33,13 +36,13 @@ export const kycApi = {
             complianceScore: Math.floor(Math.random() * 100)
           }
         }
+
         resolve(mockReport)
-      }, 2000) // 2 Sekunden Verzögerung für realistische UX
+      }, 2000)
     })
   },
 
   async searchCompanies(query: string): Promise<CompanySearchResult[]> {
-    // Mock implementation - später durch echte API ersetzen
     return new Promise((resolve) => {
       setTimeout(() => {
         const mockResults: CompanySearchResult[] = [

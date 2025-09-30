@@ -19,42 +19,11 @@ const emit = defineEmits<{
 
 const isEditing = ref(false)
 const editableAnswers = ref<Record<string, string>>({})
+const editableSources = ref<Record<string, string>>({})
 
-// Initialize editable answers
+// Initialize editable answers and sources
 editableAnswers.value = { ...props.report.answers }
-
-const getRiskLevel = (answer: string): 'low' | 'medium' | 'high' => {
-  const lowerAnswer = answer.toLowerCase()
-  if (lowerAnswer.includes('nicht') || lowerAnswer.includes('keine') || lowerAnswer.includes('unbekannt')) {
-    return 'high'
-  }
-  if (lowerAnswer.includes('teilweise') || lowerAnswer.includes('begrenzt')) {
-    return 'medium'
-  }
-  return 'low'
-}
-
-const getRiskBadgeClass = (level: 'low' | 'medium' | 'high') => {
-  switch (level) {
-    case 'low':
-      return 'bg-green-100 text-green-800'
-    case 'medium':
-      return 'bg-yellow-100 text-yellow-800'
-    case 'high':
-      return 'bg-red-100 text-red-800'
-  }
-}
-
-const getRiskLabel = (level: 'low' | 'medium' | 'high') => {
-  switch (level) {
-    case 'low':
-      return 'Niedrig'
-    case 'medium':
-      return 'Mittel'
-    case 'high':
-      return 'Hoch'
-  }
-}
+editableSources.value = { ...props.report.sources }
 
 const handleEdit = () => {
   isEditing.value = true
@@ -63,7 +32,8 @@ const handleEdit = () => {
 const handleSave = () => {
   const updatedReport = {
     ...props.report,
-    answers: editableAnswers.value
+    answers: editableAnswers.value,
+    sources: editableSources.value
   }
   emit('confirm', updatedReport)
   isEditing.value = false
@@ -71,6 +41,7 @@ const handleSave = () => {
 
 const handleCancel = () => {
   editableAnswers.value = { ...props.report.answers }
+  editableSources.value = { ...props.report.sources }
   isEditing.value = false
   emit('cancel')
 }
@@ -79,7 +50,8 @@ const handleDownloadPDF = () => {
   import('@/utils/pdfGenerator').then(({ generateKycReportPDF }) => {
     const reportWithEditableAnswers = {
       ...props.report,
-      answers: editableAnswers.value
+      answers: editableAnswers.value,
+      sources: editableSources.value
     }
     generateKycReportPDF(reportWithEditableAnswers)
   })
@@ -90,13 +62,18 @@ const totalQuestions = computed(() => Object.keys(editableAnswers.value).length)
 const navigateToReportOverview = () => {
   router.push(`/report/${props.report.id || 'current'}`)
 }
+
+const handleSendToDMS = () => {
+  // Demo function for DMS integration
+  alert('Demo: Bericht würde an DMS gesendet/gespeichert werden')
+}
 </script>
 
 <template>
-  <div class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[80vh] overflow-hidden">
+  <div class="fixed inset-0 bg-black bg-opacity-5 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[80vh] overflow-hidden flex flex-col">
       <!-- Header -->
-      <div class="flex items-center justify-between p-6 border-b border-gray-200">
+      <div class="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
         <div class="flex items-center space-x-3">
           <div class="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center">
             <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,7 +81,7 @@ const navigateToReportOverview = () => {
             </svg>
           </div>
           <div>
-            <h2 class="text-xl font-semibold text-gray-900">KYC Compliance Bericht</h2>
+            <h2 class="text-xl font-semibold text-gray-900">Mieter Recherche Bericht</h2>
             <p class="text-sm text-gray-500">{{ report.entity }}</p>
           </div>
         </div>
@@ -143,7 +120,7 @@ const navigateToReportOverview = () => {
       </div>
 
       <!-- Content -->
-      <div class="overflow-y-auto max-h-[calc(80vh-140px)] p-6">
+      <div class="overflow-y-auto flex-1 p-6">
         <div class="space-y-6">
           <!-- Company Information -->
           <div class="bg-white border border-gray-200 rounded-lg p-6">
@@ -176,35 +153,6 @@ const navigateToReportOverview = () => {
             </div>
           </div>
 
-          <!-- Risk Summary -->
-          <div class="bg-white border border-gray-200 rounded-lg p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-              </svg>
-              Risiko-Zusammenfassung
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div class="text-center p-4 bg-green-50 rounded-lg">
-                <div class="text-2xl font-bold text-green-600">
-                  {{ Object.values(editableAnswers).filter(answer => getRiskLevel(answer) === 'low').length }}
-                </div>
-                <div class="text-sm text-green-700">Niedrige Risiken</div>
-              </div>
-              <div class="text-center p-4 bg-yellow-50 rounded-lg">
-                <div class="text-2xl font-bold text-yellow-600">
-                  {{ Object.values(editableAnswers).filter(answer => getRiskLevel(answer) === 'medium').length }}
-                </div>
-                <div class="text-sm text-yellow-700">Mittlere Risiken</div>
-              </div>
-              <div class="text-center p-4 bg-red-50 rounded-lg">
-                <div class="text-2xl font-bold text-red-600">
-                  {{ Object.values(editableAnswers).filter(answer => getRiskLevel(answer) === 'high').length }}
-                </div>
-                <div class="text-sm text-red-700">Hohe Risiken</div>
-              </div>
-            </div>
-          </div>
 
           <!-- Detailed Findings -->
           <div class="bg-white border border-gray-200 rounded-lg p-6">
@@ -222,20 +170,50 @@ const navigateToReportOverview = () => {
               >
                 <div class="flex items-start justify-between mb-2">
                   <h4 class="font-medium text-gray-900">{{ questionId }}</h4>
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                    :class="getRiskBadgeClass(getRiskLevel(answer))">
-                    {{ getRiskLabel(getRiskLevel(answer)) }}
-                  </span>
                 </div>
                 <div v-if="isEditing">
-                  <textarea
-                    v-model="editableAnswers[questionId]"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows="3"
-                  ></textarea>
+                  <div class="space-y-3">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Antwort</label>
+                      <textarea
+                        v-model="editableAnswers[questionId]"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        rows="3"
+                      ></textarea>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Quelle</label>
+                      <input
+                        v-model="editableSources[questionId]"
+                        type="text"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="z.B. Handelsregister, Jahresabschluss, Website..."
+                      />
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Quelle-Link (optional)</label>
+                      <input
+                        v-model="editableSources[questionId + '_link']"
+                        type="url"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="https://..."
+                      />
+                    </div>
+                  </div>
                 </div>
                 <div v-else>
-                  <p class="text-gray-700">{{ answer }}</p>
+                  <p class="text-gray-700 mb-2">{{ answer }}</p>
+                  <div v-if="editableSources[questionId] || editableSources[questionId + '_link']" class="text-sm text-gray-500 space-y-1">
+                    <div v-if="editableSources[questionId]">
+                      <span class="font-medium">Quelle:</span> {{ editableSources[questionId] }}
+                    </div>
+                    <div v-if="editableSources[questionId + '_link']">
+                      <span class="font-medium">Link:</span>
+                      <a :href="editableSources[questionId + '_link']" target="_blank" class="text-blue-600 hover:text-blue-800 underline">
+                        {{ editableSources[questionId + '_link'] }}
+                      </a>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -247,13 +225,13 @@ const navigateToReportOverview = () => {
               <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
-              Compliance-Hinweise
+              Recherche-Hinweise
             </h3>
             <div class="prose max-w-none">
               <p class="text-gray-700">
-                Dieser Bericht wurde automatisch generiert basierend auf verfügbaren Datenquellen.
+                Dieser Recherche-Bericht wurde automatisch generiert basierend auf verfügbaren Datenquellen.
                 Bitte überprüfen Sie alle Angaben sorgfältig und ergänzen Sie fehlende Informationen
-                bei Bedarf. Bei Fragen oder Unklarheiten wenden Sie sich an das Compliance-Team.
+                bei Bedarf. Alle Quellen sind dokumentiert und können nachträglich überprüft werden.
               </p>
             </div>
           </div>
@@ -261,12 +239,12 @@ const navigateToReportOverview = () => {
       </div>
 
       <!-- Footer -->
-      <div class="flex items-center justify-between p-6 border-t border-gray-200 bg-white">
+      <div class="flex items-center justify-between p-6 border-t border-gray-200 bg-white flex-shrink-0">
         <div class="text-sm text-gray-500">
           Bericht erstellt am {{ report.timestamp ? new Date(report.timestamp).toLocaleString('de-DE') : 'Unbekannt' }}
         </div>
 
-        <div class="flex items-center space-x-3">
+        <div class="flex items-center gap-4">
           <button
             v-if="isEditing"
             @click="handleSave"
@@ -284,6 +262,14 @@ const navigateToReportOverview = () => {
             onmouseout="this.style.backgroundColor='#1E3B64'"
           >
             Vollständige Übersicht
+          </button>
+
+          <button
+            v-if="!isEditing"
+            @click="handleSendToDMS"
+            class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
+          >
+            An DMS senden/speichern
           </button>
 
           <button

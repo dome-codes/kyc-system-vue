@@ -25,6 +25,7 @@ const activeTab = ref('standard')
 
 // Questions state
 const selectedQuestions = ref<Set<string>>(new Set())
+const selectedStandardQuestions = ref<Set<string>>(new Set())
 const customQuestions = ref<KycQuestion[]>([])
 const showStandardQuestions = ref(true)
 
@@ -36,14 +37,10 @@ const standardQuestions: KycQuestion[] = [
   { id: "std_founded_date", text: "Gründungsdatum?" },
   { id: "std_address", text: "Vollständige Geschäftsadresse?" },
   { id: "std_business_purpose", text: "Geschäftszweck / Unternehmensgegenstand?" },
-  { id: "std_share_capital", text: "Stamm-/Grundkapital?" },
   { id: "std_managing_directors", text: "Geschäftsführung / Vorstand?" },
   { id: "std_beneficial_owners", text: "Wirtschaftlich Berechtigte (25%+)?" },
   { id: "std_annual_revenue", text: "Umsatz letztes Geschäftsjahr?" },
   { id: "std_employees_count", text: "Anzahl der Mitarbeiter?" },
-  { id: "std_bank_relationships", text: "Bankverbindungen?" },
-  { id: "std_tax_number", text: "Steuernummer?" },
-  { id: "std_vat_number", text: "USt-IdNr.?" },
 ]
 
 // Question groups
@@ -56,8 +53,6 @@ const questionGroups = [
       { id: 'comp_aml', text: 'Anti-Money-Laundering (AML) Verfahren?' },
       { id: 'comp_kyc', text: 'KYC-Prozesse und Dokumentation?' },
       { id: 'comp_sanctions', text: 'Sanktionslisten-Prüfung?' },
-      { id: 'comp_pep', text: 'PEP (Politisch exponierte Personen) Prüfung?' },
-      { id: 'comp_fatca', text: 'FATCA/CRS Compliance?' },
     ]
   },
   {
@@ -68,8 +63,6 @@ const questionGroups = [
       { id: 'fin_credit_rating', text: 'Kreditrating und Bonität?' },
       { id: 'fin_financial_statements', text: 'Jahresabschlüsse der letzten 3 Jahre?' },
       { id: 'fin_cash_flow', text: 'Cashflow-Analyse?' },
-      { id: 'fin_debt_ratio', text: 'Verschuldungsgrad?' },
-      { id: 'fin_liquidity', text: 'Liquiditätssituation?' },
     ]
   },
   {
@@ -79,21 +72,6 @@ const questionGroups = [
     questions: [
       { id: 'rep_media_coverage', text: 'Medienberichterstattung?' },
       { id: 'rep_legal_issues', text: 'Rechtliche Auseinandersetzungen?' },
-      { id: 'rep_regulatory_fines', text: 'Regulatorische Bußgelder?' },
-      { id: 'rep_customer_complaints', text: 'Kundenbeschwerden?' },
-      { id: 'rep_industry_reputation', text: 'Branchenreputation?' },
-    ]
-  },
-  {
-    id: 'operational',
-    title: 'Operative Aspekte',
-    description: 'Geschäftsprozesse und operative Effizienz',
-    questions: [
-      { id: 'op_business_model', text: 'Geschäftsmodell und Strategie?' },
-      { id: 'op_management_team', text: 'Management-Team und Erfahrung?' },
-      { id: 'op_technology', text: 'Technologie-Infrastruktur?' },
-      { id: 'op_supply_chain', text: 'Lieferkette und Partner?' },
-      { id: 'op_risk_management', text: 'Risikomanagement-Systeme?' },
     ]
   }
 ]
@@ -115,16 +93,16 @@ const isSearchValid = computed(() =>
 )
 
     const totalSelected = computed(() => {
-      const standardCount = showStandardQuestions.value ? standardQuestions.length : 0
+      const standardCount = showStandardQuestions.value ? selectedStandardQuestions.value.size : 0
       return standardCount + selectedQuestions.value.size + customQuestions.value.length
     })
 
-const maxQuestions = 50
+const maxQuestions = 30
 
 const isFormValid = computed(() =>
   currentStep.value === 'questions' &&
   selectedCompany.value &&
-  totalSelected.value >= 14 &&
+  totalSelected.value >= 1 &&
   totalSelected.value <= maxQuestions
 )
 
@@ -138,7 +116,6 @@ const handleCompanySearch = async () => {
 
   isSearching.value = true
   try {
-    // Mock search - replace with real API call
     await new Promise(resolve => setTimeout(resolve, 1000))
     searchResults.value = [
       {
@@ -175,6 +152,14 @@ const toggleQuestion = (questionId: string) => {
   }
 }
 
+const toggleStandardQuestion = (questionId: string) => {
+  if (selectedStandardQuestions.value.has(questionId)) {
+    selectedStandardQuestions.value.delete(questionId)
+  } else {
+    selectedStandardQuestions.value.add(questionId)
+  }
+}
+
 const toggleGroup = (groupId: string, add: boolean) => {
   const group = questionGroups.find(g => g.id === groupId)
   if (!group) return
@@ -204,7 +189,7 @@ const removeCustomQuestion = (index: number) => {
       if (!isFormValid.value) return
 
       const finalQuestions = [
-        ...(showStandardQuestions.value ? standardQuestions : []),
+        ...(showStandardQuestions.value ? standardQuestions.filter(q => selectedStandardQuestions.value.has(q.id)) : []),
         ...questionGroups.flatMap(g => g.questions).filter(q => selectedQuestions.value.has(q.id)),
         ...customQuestions.value.filter(q => q.text.trim())
       ]
@@ -214,10 +199,8 @@ const removeCustomQuestion = (index: number) => {
       emit('submit', entityName, finalQuestions)
     }
 
-    // Initialize standard questions as selected
-    selectedQuestions.value = new Set(standardQuestions.map(q => q.id))
+    selectedStandardQuestions.value = new Set(standardQuestions.map(q => q.id))
 
-    // Reset form when resetTrigger changes
     watch(() => props.resetTrigger, () => {
       if (props.resetTrigger) {
         resetForm()
@@ -233,7 +216,8 @@ const removeCustomQuestion = (index: number) => {
       selectedCompany.value = null
       isSearching.value = false
       activeTab.value = 'standard'
-      selectedQuestions.value = new Set(standardQuestions.map(q => q.id))
+      selectedStandardQuestions.value = new Set(standardQuestions.map(q => q.id))
+      selectedQuestions.value = new Set()
       customQuestions.value = []
       showStandardQuestions.value = true
     }
@@ -384,7 +368,7 @@ const removeCustomQuestion = (index: number) => {
           </div>
           <div class="flex items-center space-x-2">
             <span class="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
-              {{ totalSelected }}/32
+              {{ totalSelected }}/{{ maxQuestions }}
             </span>
           </div>
         </div>
@@ -400,7 +384,7 @@ const removeCustomQuestion = (index: number) => {
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
               </svg>
-              <span>Standard 14</span>
+              <span>Standard 10</span>
             </button>
             <button
               v-for="group in questionGroups"
@@ -415,10 +399,10 @@ const removeCustomQuestion = (index: number) => {
         </div>
 
         <!-- Toggle for Standard Questions -->
-        <div class="mb-6">
+        <div class="mb-8">
           <div class="flex items-center justify-between">
             <span class="text-sm font-medium text-gray-700">Standardfragen anzeigen</span>
-            <div class="flex items-center space-x-3">
+            <div class="flex items-center space-x-14">
               <div class="relative inline-block w-12 h-6 align-middle select-none">
               <input
                 type="checkbox"
@@ -428,7 +412,7 @@ const removeCustomQuestion = (index: number) => {
               />
                 <label class="block h-6 overflow-hidden rounded-full cursor-pointer transition-colors duration-200 ease-in-out" :style="{ backgroundColor: showStandardQuestions ? '#1E3B64' : '#D1D5DB' }"></label>
               </div>
-              <span class="text-sm text-gray-600">14 Fragen</span>
+              <span class="text-sm text-gray-600">10 Fragen</span>
             </div>
           </div>
         </div>
@@ -437,26 +421,61 @@ const removeCustomQuestion = (index: number) => {
         <div class="mb-8">
           <!-- Standard Questions Tab -->
           <div v-if="activeTab === 'standard'">
-            <div v-if="showStandardQuestions" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div
-                v-for="(question, index) in standardQuestions.slice(0, 6)"
-                :key="question.id"
-                class="bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-sm transition-all duration-200"
-              >
-                <div class="flex items-start space-x-3">
-                  <span class="flex-shrink-0 w-6 h-6 bg-gray-100 text-gray-600 rounded-full flex items-center justify-center text-sm font-medium">
-                    {{ index + 1 }}
-                  </span>
-                  <div class="flex-1">
-                    <p class="text-sm font-medium text-gray-900">{{ question.text }}</p>
-                    <p class="text-xs text-gray-500 mt-1">immer enthalten</p>
+            <div v-if="showStandardQuestions" class="space-y-4">
+              <div class="bg-gray-50 rounded-lg p-4">
+                <div class="flex items-center justify-between mb-4">
+                  <div>
+                    <h4 class="font-medium text-gray-900">Standardfragen</h4>
+                    <p class="text-sm text-gray-600">Grundlegende Unternehmensinformationen</p>
                   </div>
+                  <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-500">
+                      {{ selectedStandardQuestions.size }}/{{ standardQuestions.length }}
+                    </span>
+                    <button
+                      @click="selectedStandardQuestions = new Set(standardQuestions.map(q => q.id))"
+                      class="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                    >
+                      Alle hinzufügen
+                    </button>
+                    <button
+                      @click="selectedStandardQuestions = new Set()"
+                      class="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                    >
+                      Alle entfernen
+                    </button>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <label
+                    v-for="(question, index) in standardQuestions"
+                    :key="question.id"
+                    class="flex items-center space-x-6 cursor-pointer p-4 rounded-lg hover:bg-white transition-all duration-200 border border-transparent hover:border-gray-200 hover:shadow-sm"
+                  >
+                    <div class="flex-shrink-0 relative">
+                      <input
+                        type="checkbox"
+                        :checked="selectedStandardQuestions.has(question.id)"
+                        @change="toggleStandardQuestion(question.id)"
+                        class="sr-only"
+                      />
+                      <div
+                        class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all duration-200 cursor-pointer"
+                        :class="selectedStandardQuestions.has(question.id)
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-blue-50 text-blue-600 border-2 border-blue-200 hover:border-blue-300'"
+                      >
+                        {{ index + 1 }}
+                      </div>
+                    </div>
+                    <div class="flex-1 pl-2">
+                      <span class="text-sm text-gray-700 leading-relaxed">{{ question.text }}</span>
+                    </div>
+                  </label>
                 </div>
               </div>
             </div>
-            <p v-if="showStandardQuestions" class="text-sm text-gray-500 mt-4">
-              + 8 weitere Standardfragen werden automatisch hinzugefügt
-            </p>
             <div v-else class="text-center py-8">
               <p class="text-gray-500">Standardfragen sind deaktiviert</p>
             </div>
@@ -494,19 +513,31 @@ const removeCustomQuestion = (index: number) => {
                   </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <label
-                    v-for="question in group.questions"
+                    v-for="(question, index) in group.questions"
                     :key="question.id"
-                    class="flex items-start space-x-3 cursor-pointer p-3 rounded-lg hover:bg-white transition-colors"
+                    class="flex items-center space-x-6 cursor-pointer p-4 rounded-lg hover:bg-white transition-all duration-200 border border-transparent hover:border-gray-200 hover:shadow-sm"
                   >
-                    <input
-                      type="checkbox"
-                      :checked="selectedQuestions.has(question.id)"
-                      @change="toggleQuestion(question.id)"
-                      class="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                    />
-                    <span class="text-sm text-gray-700">{{ question.text }}</span>
+                    <div class="flex-shrink-0 relative">
+                      <input
+                        type="checkbox"
+                        :checked="selectedQuestions.has(question.id)"
+                        @change="toggleQuestion(question.id)"
+                        class="sr-only"
+                      />
+                      <div
+                        class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all duration-200 cursor-pointer"
+                        :class="selectedQuestions.has(question.id)
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-blue-50 text-blue-600 border-2 border-blue-200 hover:border-blue-300'"
+                      >
+                        {{ index + 1 }}
+                      </div>
+                    </div>
+                    <div class="flex-1 pl-2">
+                      <span class="text-sm text-gray-700 leading-relaxed">{{ question.text }}</span>
+                    </div>
                   </label>
                 </div>
               </div>
@@ -562,20 +593,20 @@ const removeCustomQuestion = (index: number) => {
 
 
         <!-- Submit Button -->
-        <div class="mt-8">
+        <div class="mt-8 flex justify-center">
           <button
             @click="handleSubmit"
             :disabled="!isFormValid"
-            class="w-full px-8 py-4 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-[1.02] disabled:transform-none"
+            class="px-8 py-3 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-base font-medium shadow-md hover:shadow-lg transform hover:scale-[1.02] disabled:transform-none"
             style="background-color: #1E3B64;"
             onmouseover="this.style.backgroundColor='#0f2a4a'"
             onmouseout="this.style.backgroundColor='#1E3B64'"
           >
             <div class="flex items-center justify-center space-x-2">
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
-              <span>KYC-Bericht erstellen</span>
+              <span>Mieter Recherche starten</span>
             </div>
           </button>
         </div>

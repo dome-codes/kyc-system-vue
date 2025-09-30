@@ -17,7 +17,7 @@
               <span class="text-white font-bold text-lg">O</span>
             </div>
             <div>
-              <h1 class="text-xl font-semibold text-gray-900">KYC-Bericht Übersicht</h1>
+              <h1 class="text-xl font-semibold text-gray-900">Mieter Recherche Bericht</h1>
               <p class="text-sm text-gray-500">{{ report?.entity }}</p>
             </div>
           </div>
@@ -121,7 +121,7 @@
             <div class="bg-white rounded-xl shadow-sm border border-gray-200">
               <div class="p-6 border-b border-gray-200">
                 <h2 class="text-xl font-semibold text-gray-900">Fragen & Antworten</h2>
-                <p class="text-sm text-gray-600 mt-1">Detaillierte Analyse der Compliance-Fragen</p>
+                <p class="text-sm text-gray-600 mt-1">Detaillierte Analyse der Recherche-Fragen</p>
               </div>
               <div class="p-6">
                 <div class="space-y-6">
@@ -283,19 +283,19 @@ onMounted(() => {
     report.value = kycStore.currentReport
   } else if (route.params.id) {
     // Load report by ID (for future implementation)
-    console.log('Loading report by ID:', route.params.id)
   }
 })
 
 const getQuestionNumber = (questionId: string): number => {
   if (!report.value?.questions) return 1
-  return report.value.questions.findIndex(q => q.id === questionId) + 1
+  const index = report.value.questions.findIndex(q => q.id === questionId)
+  return index >= 0 ? index + 1 : 1
 }
 
 const getQuestionText = (questionId: string): string => {
-  if (!report.value?.questions) return 'Unbekannte Frage'
+  if (!report.value?.questions) return questionId
   const question = report.value.questions.find(q => q.id === questionId)
-  return question?.text || 'Unbekannte Frage'
+  return question?.text || questionId
 }
 
 const formatDate = (timestamp?: string): string => {

@@ -1,12 +1,14 @@
 export interface KycQuestion {
   id: string
   text: string
+  source?: string
 }
 
 export interface KycReport {
   id?: string
   entity: string
   answers: Record<string, string>
+  sources: Record<string, string>
   status: "pending_confirmation" | "confirmed"
   timestamp?: string
   questions?: KycQuestion[]

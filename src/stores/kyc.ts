@@ -1,7 +1,7 @@
-import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import type { KycReport, KycQuestion, CompanySearchResult } from '@/types/kyc'
 import { kycApi } from '@/api/kyc'
+import type { CompanySearchResult, KycQuestion, KycReport } from '@/types/kyc'
+import { defineStore } from 'pinia'
+import { computed, ref } from 'vue'
 
 export const useKycStore = defineStore('kyc', () => {
   // State
@@ -13,7 +13,7 @@ export const useKycStore = defineStore('kyc', () => {
   const selectedCompany = ref<CompanySearchResult | null>(null)
 
   // Getters
-  const confirmedReports = computed(() => 
+  const confirmedReports = computed(() =>
     reports.value.filter(report => report.status === 'confirmed')
   )
 
@@ -26,12 +26,15 @@ export const useKycStore = defineStore('kyc', () => {
 
     try {
       const response = await kycApi.createReport(entity, questions)
-      
+
       const newReport: KycReport = {
         entity: response.entity,
         answers: response.answers,
+        sources: response.sources || {},
         status: "pending_confirmation",
         timestamp: response.timestamp,
+        questions: response.questions,
+        summary: response.summary
       }
 
       currentReport.value = newReport
@@ -84,11 +87,11 @@ export const useKycStore = defineStore('kyc', () => {
     error,
     searchResults,
     selectedCompany,
-    
+
     // Getters
     confirmedReports,
     totalReports,
-    
+
     // Actions
     createReport,
     confirmReport,

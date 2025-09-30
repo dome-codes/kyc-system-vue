@@ -7,9 +7,6 @@ export const generateKycReportPDF = (report: KycReport): void => {
   // Colors
   const primaryColor = '#1E3B64'
   const secondaryColor = '#6B7280'
-  const successColor = '#10B981'
-  const warningColor = '#F59E0B'
-  const dangerColor = '#EF4444'
 
   let yPosition = 20
 
@@ -46,7 +43,7 @@ export const generateKycReportPDF = (report: KycReport): void => {
   doc.setFontSize(20)
   doc.setTextColor(255, 255, 255)
   doc.setFont('helvetica', 'bold')
-  doc.text('KYC Compliance Bericht', 20, 20)
+  doc.text('Mieter Recherche Bericht', 20, 20)
 
   yPosition = 50
 
@@ -65,8 +62,6 @@ export const generateKycReportPDF = (report: KycReport): void => {
     yPosition = addSectionHeader('Zusammenfassung', yPosition)
     yPosition = addText(`Gesamtfragen: ${report.summary.totalQuestions}`, 20, yPosition, 170)
     yPosition = addText(`Beantwortet: ${report.summary.completedQuestions}`, 20, yPosition, 170)
-    yPosition = addText(`Risiko-Score: ${report.summary.riskScore}%`, 20, yPosition, 170, 10, getRiskColor(report.summary.riskScore))
-    yPosition = addText(`Compliance-Score: ${report.summary.complianceScore}%`, 20, yPosition, 170, 10, getComplianceColor(report.summary.complianceScore))
     yPosition = addLine(yPosition)
   }
 
@@ -82,15 +77,22 @@ export const generateKycReportPDF = (report: KycReport): void => {
     }
 
     const questionText = report.questions?.find(q => q.id === questionId)?.text || questionId
-    const riskLevel = getRiskLevel(answer)
+    const source = report.sources?.[questionId] || ''
+    const sourceLink = report.sources?.[questionId + '_link'] || ''
 
     // Question number and text
     yPosition = addText(`${questionNumber}. ${questionText}`, 20, yPosition, 170, 11, primaryColor)
 
-    // Answer with risk indicator
-    const riskColor = getRiskColorFromLevel(riskLevel)
+    // Answer
     yPosition = addText(`Antwort: ${answer}`, 30, yPosition, 160, 10)
-    yPosition = addText(`Risiko: ${getRiskLabel(riskLevel)}`, 30, yPosition, 160, 9, riskColor)
+
+    // Source information
+    if (source) {
+      yPosition = addText(`Quelle: ${source}`, 30, yPosition, 160, 9, secondaryColor)
+    }
+    if (sourceLink) {
+      yPosition = addText(`Link: ${sourceLink}`, 30, yPosition, 160, 9, secondaryColor)
+    }
 
     yPosition += 10
     questionNumber++
@@ -107,54 +109,6 @@ export const generateKycReportPDF = (report: KycReport): void => {
   }
 
   // Save the PDF
-  const fileName = `kyc-report-${report.entity.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`
+  const fileName = `mieter-recherche-${report.entity.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`
   doc.save(fileName)
 }
-
-const getRiskLevel = (answer: string): 'low' | 'medium' | 'high' => {
-  const lowerAnswer = answer.toLowerCase()
-  if (lowerAnswer.includes('nicht') || lowerAnswer.includes('keine') || lowerAnswer.includes('unbekannt')) {
-    return 'high'
-  }
-  if (lowerAnswer.includes('teilweise') || lowerAnswer.includes('begrenzt')) {
-    return 'medium'
-  }
-  return 'low'
-}
-
-const getRiskLabel = (level: 'low' | 'medium' | 'high'): string => {
-  switch (level) {
-    case 'low':
-      return 'Niedrig'
-    case 'medium':
-      return 'Mittel'
-    case 'high':
-      return 'Hoch'
-  }
-}
-
-const getRiskColor = (score: number): string => {
-  if (score >= 80) return '#EF4444'
-  if (score >= 60) return '#F59E0B'
-  if (score >= 40) return '#F59E0B'
-  return '#10B981'
-}
-
-const getComplianceColor = (score: number): string => {
-  if (score >= 80) return '#10B981'
-  if (score >= 60) return '#F59E0B'
-  if (score >= 40) return '#F59E0B'
-  return '#EF4444'
-}
-
-const getRiskColorFromLevel = (level: 'low' | 'medium' | 'high'): string => {
-  switch (level) {
-    case 'low':
-      return '#10B981'
-    case 'medium':
-      return '#F59E0B'
-    case 'high':
-      return '#EF4444'
-  }
-}
-
