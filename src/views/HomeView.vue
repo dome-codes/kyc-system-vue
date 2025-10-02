@@ -12,9 +12,9 @@ const router = useRouter()
 const isReportPopupOpen = ref(false)
 const formResetTrigger = ref(0)
 
-const handleFormSubmit = async (entity: string, questions: KycQuestion[]) => {
+const handleFormSubmit = async (entity: string, questions: KycQuestion[], land?: string, branche?: string) => {
   try {
-    await kycStore.createReport(entity, questions)
+    await kycStore.createReport(entity, questions, land, branche)
     isReportPopupOpen.value = true
   } catch (error) {
     // Error handling

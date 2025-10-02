@@ -1,45 +1,102 @@
-import type { CompanySearchResult, KycQuestion, KycReport } from '@/types/kyc'
+import type {
+  Antwort,
+  CompanySearchResult,
+  KycQuestion,
+  KycReport,
+  ResearchRequest,
+  ResearchSuccess,
+  VerifyAmbiguous,
+  VerifyOk
+} from '@/types/kyc'
 import axios from 'axios'
 
-// Mock API - später durch echte API ersetzen
-const API_BASE_URL = 'http://localhost:3001/api'
+// Backend API URL - FastAPI server
+const API_BASE_URL = 'http://localhost:8000'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 30000, // Longer timeout for research operations
 })
 
 export const kycApi = {
-  async createReport(entity: string, questions: KycQuestion[]): Promise<KycReport> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const mockAnswers: Record<string, string> = {}
-        const mockSources: Record<string, string> = {}
-        questions.forEach((question) => {
-          mockAnswers[question.id] = `Mock-Antwort für: ${question.text}`
-          mockSources[question.id] = `Handelsregister`
-          mockSources[question.id + '_link'] = `https://handelsregister.de/example/${question.id}`
-        })
+  async createReport(entity: string, questions: KycQuestion[], land?: string, branche?: string): Promise<KycReport> {
+    try {
+      // Zuerst Mieter verifizieren
+      const verifyRequest: ResearchRequest = {
+        mieter: entity,
+        land: land || undefined,
+        branche: branche || undefined,
+        fragen: questions.map(q => q.id)
+      }
 
-        const mockReport: KycReport = {
-          id: `report_${Date.now()}`,
-          entity,
-          answers: mockAnswers,
-          sources: mockSources,
-          status: 'pending_confirmation',
-          timestamp: new Date().toISOString(),
-          questions: questions,
-          summary: {
-            totalQuestions: questions.length,
-            completedQuestions: questions.length,
-            riskScore: Math.floor(Math.random() * 100),
-            complianceScore: Math.floor(Math.random() * 100)
-          }
+      const verifyResponse = await this.verifyTenant(verifyRequest)
+
+      // Bei mehrdeutigen Ergebnissen den ersten Vorschlag verwenden
+      let verifiedMieter = entity
+      if ('vorschlaege' in verifyResponse && verifyResponse.vorschlaege.length > 0) {
+        verifiedMieter = verifyResponse.vorschlaege[0].name
+      } else if ('mieter' in verifyResponse) {
+        verifiedMieter = verifyResponse.mieter
+      }
+
+      // Dann Recherche durchführen
+      const researchResponse = await this.runResearch(verifyRequest)
+
+      // Antworten und Quellen umwandeln
+      const answers: Record<string, string> = {}
+      const sources: Record<string, string> = {}
+
+      researchResponse.antworten.forEach((antwort: Antwort) => {
+        answers[antwort.frage_id] = antwort.antwort
+        sources[antwort.frage_id] = antwort.quelle
+        sources[antwort.frage_id + '_link'] = antwort.quelle_link
+      })
+
+      const report: KycReport = {
+        id: `report_${Date.now()}`,
+        entity: verifiedMieter,
+        answers,
+        sources,
+        status: 'pending_confirmation',
+        timestamp: new Date().toISOString(),
+        questions: questions,
+        summary: {
+          totalQuestions: questions.length,
+          completedQuestions: questions.length,
+          riskScore: Math.floor(Math.random() * 40) + 60, // Lower risk scores
+          complianceScore: Math.floor(Math.random() * 30) + 70 // Higher compliance scores
         }
+      }
 
-        resolve(mockReport)
-      }, 2000)
-    })
+      return report
+    } catch (error) {
+      console.error('Error creating report:', error)
+      throw error
+    }
+  },
+
+  async verifyTenant(request: ResearchRequest): Promise<VerifyOk | VerifyAmbiguous> {
+    try {
+      const response = await api.post('/verify', request)
+      return response.data
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.detail || 'Mieter-Verifizierung fehlgeschlagen')
+      }
+      throw error
+    }
+  },
+
+  async runResearch(request: ResearchRequest): Promise<ResearchSuccess> {
+    try {
+      const response = await api.post('/research', request)
+      return response.data
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.detail || 'Recherche fehlgeschlagen')
+      }
+      throw error
+    }
   },
 
   async searchCompanies(query: string): Promise<CompanySearchResult[]> {

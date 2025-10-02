@@ -10,7 +10,7 @@ interface Props {
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  submit: [entity: string, questions: KycQuestion[]]
+  submit: [entity: string, questions: KycQuestion[], land?: string, branche?: string]
 }>()
 
 // Form state
@@ -195,8 +195,10 @@ const removeCustomQuestion = (index: number) => {
       ]
 
       const entityName = selectedCompany.value?.name || entity.value
+      const landValue = selectedCompany.value?.country || country.value
+      const brancheValue = selectedCompany.value?.industry || industry.value
 
-      emit('submit', entityName, finalQuestions)
+      emit('submit', entityName, finalQuestions, landValue, brancheValue)
     }
 
     selectedStandardQuestions.value = new Set(standardQuestions.map(q => q.id))

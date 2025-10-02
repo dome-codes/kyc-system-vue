@@ -20,6 +20,46 @@ export interface KycReport {
   }
 }
 
+// Backend API Types
+export interface ResearchRequest {
+  mieter: string
+  fragen: string[]
+  land?: string
+  branche?: string
+}
+
+export interface TenantSuggestion {
+  id: string
+  name: string
+  land?: string
+  branche?: string
+}
+
+export interface VerifyOk {
+  mieter: string
+}
+
+export interface VerifyAmbiguous {
+  mieter_eingabe: string
+  vorschlaege: TenantSuggestion[]
+}
+
+export interface Antwort {
+  frage_id: string
+  frage_text: string
+  antwort: string
+  quelle: string
+  quelle_link: string
+  kategorie: string
+}
+
+export interface ResearchSuccess {
+  mieter: string
+  branche?: string
+  land?: string
+  antworten: Antwort[]
+}
+
 export interface CompanySearchResult {
   id: string
   name: string

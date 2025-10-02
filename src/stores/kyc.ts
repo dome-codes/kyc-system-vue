@@ -20,14 +20,15 @@ export const useKycStore = defineStore('kyc', () => {
   const totalReports = computed(() => reports.value.length)
 
   // Actions
-  const createReport = async (entity: string, questions: KycQuestion[]) => {
+  const createReport = async (entity: string, questions: KycQuestion[], land?: string, branche?: string) => {
     isLoading.value = true
     error.value = null
 
     try {
-      const response = await kycApi.createReport(entity, questions)
+      const response = await kycApi.createReport(entity, questions, land, branche)
 
       const newReport: KycReport = {
+        id: response.id,
         entity: response.entity,
         answers: response.answers,
         sources: response.sources || {},
