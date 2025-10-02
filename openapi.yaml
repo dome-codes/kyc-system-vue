@@ -1,184 +1,116 @@
 openapi: 3.0.3
 info:
-  title: Mieter Recherche Quick Check API
+  title: KYC Research API
   version: 1.0.0
-  description: OpenAPI specification for the Mieter Recherche Quick Check system
+  description: OpenAPI specification generated from backend/main.py endpoints /verify and /research
 servers:
-  - url: http://localhost:3000/api
-    description: Development server
+  - url: http://localhost:8000/amiki-kyc
 paths:
-  /create-report:
+  /verify:
     post:
-      summary: Create Mieter Recherche report
-      operationId: createReport
+      summary: Verify tenant
+      operationId: verifyTenant
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ReportRequest"
+              $ref: "#/components/schemas/ResearchRequest"
       responses:
         '200':
-          description: Report created successfully
+          description: Verification result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ReportResponse"
-        '400':
-          description: Bad request
+                oneOf:
+                  - $ref: "#/components/schemas/VerifyOk"
+                  - $ref: "#/components/schemas/VerifyAmbiguous"
         '422':
           description: Validation error
-  /reports/{id}:
-    get:
-      summary: Get report by ID
-      operationId: getReport
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
+  /research:
+    post:
+      summary: Run KYC research
+      operationId: kycResearch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResearchRequest"
       responses:
         '200':
-          description: Report retrieved successfully
+          description: Research results
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ReportResponse"
-        '404':
-          description: Report not found
+                $ref: "#/components/schemas/ResearchSuccess"
+        '422':
+          description: Validation error
 components:
   schemas:
-    ReportRequest:
+    ResearchRequest:
       type: object
       required:
-        - companyName
-        - questions
+        - mieter
+        - fragen
       properties:
-        companyName:
+        mieter:
           type: string
-          description: Name of the company to research
-          example: "Beispiel GmbH"
+          description: Tenant name or identifier
         land:
           type: string
           nullable: true
-          description: Country of the company
-          example: "Deutschland"
+        fragen:
+          type: array
+          items:
+            type: string
+          description: List of question IDs
         branche:
           type: string
           nullable: true
-          description: Industry sector of the company
-          example: "Technologie"
-        addStandardQuestions:
-          type: boolean
-          description: Whether to include standard questions
-          example: true
-        selectedStandardQuestions:
-          type: array
-          items:
-            type: string
-          description: IDs of selected standard questions
-          example: ["q1", "q3", "q5"]
-        customQuestions:
-          type: array
-          items:
-            $ref: "#/components/schemas/CustomQuestion"
-          description: Custom questions added by user
-        complianceQuestions:
-          type: array
-          items:
-            $ref: "#/components/schemas/CustomQuestion"
-          description: Compliance-related questions
-        financialQuestions:
-          type: array
-          items:
-            $ref: "#/components/schemas/CustomQuestion"
-          description: Financial-related questions
-        reputationQuestions:
-          type: array
-          items:
-            $ref: "#/components/schemas/CustomQuestion"
-          description: Reputation-related questions
-    CustomQuestion:
-      type: object
-      required:
-        - id
-        - text
-      properties:
-        id:
-          type: string
-          description: Unique identifier for the question
-          example: "custom_q1"
-        text:
-          type: string
-          description: The question text
-          example: "Wie ist die aktuelle Finanzlage des Unternehmens?"
-        category:
-          type: string
-          nullable: true
-          description: Category of the question
-          example: "financial"
-    ReportResponse:
+    TenantSuggestion:
       type: object
       properties:
         id:
           type: string
-          description: Unique report identifier
-          example: "report_123"
-        companyName:
+        name:
           type: string
-          description: Name of the researched company
-          example: "Beispiel GmbH"
-        questions:
-          type: array
-          items:
-            $ref: "#/components/schemas/QuestionResponse"
-          description: List of questions and their answers
-        sources:
-          type: object
-          additionalProperties:
-            type: string
-          description: Mapping of question IDs to source links
-          example:
-            "q1": "https://example.com/source1"
-            "q2": "https://example.com/source2"
-        summary:
+        land:
           type: string
-          description: Summary of the research findings
-          example: "Das Unternehmen zeigt positive Entwicklung..."
-        createdAt:
+          nullable: true
+        branche:
           type: string
-          format: date-time
-          description: Timestamp when the report was created
-          example: "2024-01-15T10:30:00Z"
-    QuestionResponse:
+          nullable: true
+    VerifyOk:
       type: object
       properties:
-        id:
+        mieter:
           type: string
-          description: Question identifier
-          example: "q1"
-        text:
+    VerifyAmbiguous:
+      type: object
+      properties:
+        mieter_eingabe:
           type: string
-          description: The question text
-          example: "Wie ist die aktuelle Geschäftsentwicklung?"
-        answer:
+        vorschlaege:
+          type: array
+          items:
+            $ref: "#/components/schemas/TenantSuggestion"
+    Antwort:
+      type: object
+      additionalProperties: true
+    ResearchSuccess:
+      type: object
+      properties:
+        mieter:
           type: string
-          description: Answer to the question
-          example: "Das Unternehmen zeigt stetiges Wachstum..."
-        source:
+        branche:
+          type: string
+          nullable<｜tool▁call▁begin｜>
+              true
+        land:
           type: string
           nullable: true
-          description: Source of the answer
-          example: "Handelsblatt"
-        sourceLink:
-          type: string
-          nullable: true
-          description: URL link to the source
-          example: "https://handelsblatt.de/article"
-        category:
-          type: string
-          nullable: true
-          description: Category of the question
-          example: "standard"
-          enum: ["standard", "compliance", "financial", "reputation", "custom"]
+        antworten:
+          type: array
+          items:
+            $ref: "#/components/schemas/Antwort"
