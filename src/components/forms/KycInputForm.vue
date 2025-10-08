@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useKycStore } from '@/stores/kyc';
-import type { KycQuestion, KycReport } from '@/types/kyc';
+import type { KycQuestion } from '@/types/kyc';
 import { computed, ref, watch } from 'vue';
 
 interface Props {
@@ -337,20 +337,6 @@ const removeCustomQuestion = (index: number) => {
           showReportPopup: showReportPopup.value,
           currentReport: currentReport.value
         })
-      }
-
-      // Handler für Report-Bestätigung - WICHTIG: Bericht zur Liste hinzufügen!
-      const handleReportConfirm = (report: KycReport) => {
-        console.log('✅ Report confirmed, adding to store:', report)
-        kycStore.confirmReport(report) // ← Das war der fehlende Aufruf!
-        showReportPopup.value = false
-        // Optional: Zur Reports-Übersicht navigieren
-        // router.push('/reports')
-      }
-
-      const handleReportCancel = () => {
-        showReportPopup.value = false
-      }
 
       } catch (error) {
         console.error('❌ Research error:', error)
@@ -363,6 +349,19 @@ const removeCustomQuestion = (index: number) => {
     }
 
     selectedStandardQuestions.value = new Set(standardQuestions.map(q => q.id))
+
+    // Handler für Report-Bestätigung - WICHTIG: Bericht zur Liste hinzufügen!
+    const handleReportConfirm = (report: any) => {
+      console.log('✅ Report confirmed, adding to store:', report)
+      kycStore.confirmReport(report) // ← Das war der fehlende Aufruf!
+      showReportPopup.value = false
+      // Optional: Zur Reports-Übersicht navigieren
+      // router.push('/reports')
+    }
+
+    const handleReportCancel = () => {
+      showReportPopup.value = false
+    }
 
     const generatePDF = () => {
       if (currentReport.value) {
@@ -833,7 +832,7 @@ const removeCustomQuestion = (index: number) => {
         <div class="flex-1 overflow-y-auto px-6 py-4">
           <div v-for="(answer, questionId) in currentReport.answers" :key="questionId" class="mb-6">
             <div class="bg-gray-50 rounded-lg p-4">
-              <h3 class="font-semibold text-gray-900 mb-2">{{ getQuestionText(questionId) }}</h3>
+              <h3 class="font-semibold text-gray-900 mb-2">{{ getQuestionText(String(questionId)) }}</h3>
               <p class="text-gray-700 mb-3">{{ answer.answer }}</p>
               <div v-if="answer.source" class="flex items-center space-x-2">
                 <span class="text-sm text-gray-500">Quelle:</span>
