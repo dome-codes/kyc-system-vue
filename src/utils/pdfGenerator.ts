@@ -40,41 +40,34 @@ export const generateKycReportPDF = (report: KycReport): void => {
   doc.setFillColor(220, 38, 38) // Red background
   doc.rect(0, 0, 210, 35, 'F')
 
-  // Add SVG Logo as Base64
-  const logoSvg = `data:image/svg+xml;base64,${btoa(`
-<svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#DC2626;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#EF4444;stop-opacity:1" />
-    </linearGradient>
-  </defs>
-  <rect x="2" y="2" width="44" height="44" rx="8" ry="8" fill="url(#gradient)" stroke="none"/>
-  <rect x="12" y="8" width="16" height="20" rx="2" fill="white" opacity="0.9"/>
-  <rect x="14" y="10" width="8" height="1.5" fill="#DC2626"/>
-  <rect x="14" y="13" width="10" height="1.5" fill="#DC2626"/>
-  <rect x="14" y="16" width="6" height="1.5" fill="#DC2626"/>
-  <rect x="14" y="19" width="8" height="1.5" fill="#DC2626"/>
-  <rect x="14" y="22" width="7" height="1.5" fill="#DC2626"/>
-  <circle cx="32" cy="20" r="6" fill="white" opacity="0.9"/>
-  <circle cx="32" cy="18" r="1.5" fill="#DC2626"/>
-  <rect x="30.5" y="21" width="3" height="4" rx="0.5" fill="#DC2626"/>
-  <text x="24" y="40" font-family="Arial, sans-serif" font-size="8" font-weight="bold" text-anchor="middle" fill="white">KYC</text>
-</svg>
-  `)}`
+  // Add Logo (PNG will be used in future)
+  // For now, create a placeholder that can be easily replaced with PNG
 
-  // Add logo image (jsPDF doesn't support SVG directly, so we'll use a simple approach)
-  // For now, we'll use a text-based approach but styled to look like the logo
-  doc.setFillColor(255, 255, 255)
-  doc.rect(15, 8, 20, 20, 'F')
+  // Logo placeholder - will be replaced with PNG logo
   doc.setFillColor(220, 38, 38)
-  doc.rect(15, 8, 20, 20, 'S')
+  doc.rect(15, 8, 20, 20, 'F')
 
-  // Add "KYC" text in the logo area
-  doc.setFontSize(12)
-  doc.setTextColor(220, 38, 38)
-  doc.setFont('helvetica', 'bold')
-  doc.text('KYC', 25, 20)
+  // Simple logo placeholder (no text, just shape)
+  doc.setFillColor(255, 255, 255)
+  doc.rect(19, 12, 8, 10, 'F')
+
+  // Document lines
+  doc.setFillColor(220, 38, 38)
+  doc.rect(20, 13, 4, 0.5, 'F')
+  doc.rect(20, 14.5, 5, 0.5, 'F')
+  doc.rect(20, 16, 3, 0.5, 'F')
+  doc.rect(20, 17.5, 4, 0.5, 'F')
+  doc.rect(20, 19, 3.5, 0.5, 'F')
+
+  // Info circle
+  doc.setFillColor(255, 255, 255)
+  doc.circle(30, 16, 2.5, 'F')
+  doc.setFillColor(220, 38, 38)
+  doc.circle(30, 15, 0.5, 'F')
+  doc.rect(29.5, 16.5, 1, 1.5, 'F')
+
+  // TODO: Replace with PNG logo
+  // doc.addImage('/logo.png', 'PNG', 15, 8, 20, 20)
 
   // Main title
   doc.setFontSize(18)
@@ -88,7 +81,7 @@ export const generateKycReportPDF = (report: KycReport): void => {
   doc.setFontSize(8)
   doc.setTextColor(220, 38, 38)
   doc.setFont('helvetica', 'bold')
-  doc.text('🤖 AI Generated', 165, 16)
+  doc.text('AI Generated', 165, 16)
 
   yPosition = 50
 
@@ -188,7 +181,7 @@ Bitte überprüfen Sie alle Angaben und ergänzen Sie bei Bedarf weitere manuell
   doc.setFontSize(8)
   doc.setTextColor(220, 38, 38)
   doc.setFont('helvetica', 'bold')
-  doc.text('🤖 Generiert durch KYC AI System', 20, yPosition)
+  doc.text('Generiert durch KYC AI System', 20, yPosition)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(secondaryColor)
   doc.text(`• SearXNG Web-Suche • LLM-Analyse • Automatische Datenextraktion`, 20, yPosition + 5)
@@ -217,7 +210,7 @@ Bitte überprüfen Sie alle Angaben und ergänzen Sie bei Bedarf weitere manuell
     doc.setFontSize(8)
     doc.setTextColor(220, 38, 38)
     doc.setFont('helvetica', 'bold')
-    doc.text('🤖 KYC AI System', 150, 290)
+    doc.text('KYC AI System', 150, 290)
   }
 
   // Save the PDF
