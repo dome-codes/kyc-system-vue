@@ -5,7 +5,7 @@ export const generateKycReportPDF = (report: KycReport): void => {
   const doc = new jsPDF()
 
   // Colors
-  const primaryColor = '#1E3B64'
+  const primaryColor = '#DC2626'
   const secondaryColor = '#6B7280'
 
   let yPosition = 20
@@ -36,14 +36,59 @@ export const generateKycReportPDF = (report: KycReport): void => {
     return y + 10
   }
 
-  // Header
-  doc.setFillColor(30, 59, 100)
-  doc.rect(0, 0, 210, 30, 'F')
+  // Header with Logo
+  doc.setFillColor(220, 38, 38) // Red background
+  doc.rect(0, 0, 210, 35, 'F')
 
-  doc.setFontSize(20)
+  // Add SVG Logo as Base64
+  const logoSvg = `data:image/svg+xml;base64,${btoa(`
+<svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#DC2626;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#EF4444;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="44" height="44" rx="8" ry="8" fill="url(#gradient)" stroke="none"/>
+  <rect x="12" y="8" width="16" height="20" rx="2" fill="white" opacity="0.9"/>
+  <rect x="14" y="10" width="8" height="1.5" fill="#DC2626"/>
+  <rect x="14" y="13" width="10" height="1.5" fill="#DC2626"/>
+  <rect x="14" y="16" width="6" height="1.5" fill="#DC2626"/>
+  <rect x="14" y="19" width="8" height="1.5" fill="#DC2626"/>
+  <rect x="14" y="22" width="7" height="1.5" fill="#DC2626"/>
+  <circle cx="32" cy="20" r="6" fill="white" opacity="0.9"/>
+  <circle cx="32" cy="18" r="1.5" fill="#DC2626"/>
+  <rect x="30.5" y="21" width="3" height="4" rx="0.5" fill="#DC2626"/>
+  <text x="24" y="40" font-family="Arial, sans-serif" font-size="8" font-weight="bold" text-anchor="middle" fill="white">KYC</text>
+</svg>
+  `)}`
+
+  // Add logo image (jsPDF doesn't support SVG directly, so we'll use a simple approach)
+  // For now, we'll use a text-based approach but styled to look like the logo
+  doc.setFillColor(255, 255, 255)
+  doc.rect(15, 8, 20, 20, 'F')
+  doc.setFillColor(220, 38, 38)
+  doc.rect(15, 8, 20, 20, 'S')
+
+  // Add "KYC" text in the logo area
+  doc.setFontSize(12)
+  doc.setTextColor(220, 38, 38)
+  doc.setFont('helvetica', 'bold')
+  doc.text('KYC', 25, 20)
+
+  // Main title
+  doc.setFontSize(18)
   doc.setTextColor(255, 255, 255)
   doc.setFont('helvetica', 'bold')
-  doc.text('Mieter Recherche Bericht', 20, 20)
+  doc.text('Mieter Recherche Bericht', 45, 15)
+
+  // AI Badge
+  doc.setFillColor(255, 255, 255)
+  doc.rect(160, 8, 45, 12, 'F')
+  doc.setFontSize(8)
+  doc.setTextColor(220, 38, 38)
+  doc.setFont('helvetica', 'bold')
+  doc.text('🤖 AI Generated', 165, 16)
 
   yPosition = 50
 
@@ -82,8 +127,12 @@ export const generateKycReportPDF = (report: KycReport): void => {
     let source = '';
     let sourceLink = '';
 
-    if (answer && typeof answer === 'object' && answer.quelle) {
-      // Backend provides source in answer object
+    if (answer && typeof answer === 'object' && answer.quellen && answer.quellen.length > 0) {
+      // Backend provides sources array with {titel, url} objects
+      source = answer.quellen.map((q: any) => q.titel).join(', ');
+      sourceLink = answer.quellen[0]?.url || '';
+    } else if (answer && typeof answer === 'object' && answer.quelle) {
+      // Fallback for old format
       source = answer.quelle;
     } else {
     // Fallback to original sources mapping
@@ -124,14 +173,51 @@ export const generateKycReportPDF = (report: KycReport): void => {
     questionNumber++
   }
 
-  // Footer
+  // AI Disclaimer Section
+  yPosition += 20
+  yPosition = addSectionHeader('AI-Hinweis', yPosition)
+
+  const aiDisclaimer = `Dieser Bericht wurde automatisch durch unser KI-System erstellt. Die Informationen basieren auf öffentlich verfügbaren Daten und Web-Recherchen.
+
+Bitte überprüfen Sie alle Angaben und ergänzen Sie bei Bedarf weitere manuelle Recherchen. Für die Richtigkeit der Daten kann keine Gewähr übernommen werden.`
+
+  yPosition = addText(aiDisclaimer, 20, yPosition, 170, 9, secondaryColor)
+
+  // AI System Info
+  yPosition += 10
+  doc.setFontSize(8)
+  doc.setTextColor(220, 38, 38)
+  doc.setFont('helvetica', 'bold')
+  doc.text('🤖 Generiert durch KYC AI System', 20, yPosition)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(secondaryColor)
+  doc.text(`• SearXNG Web-Suche • LLM-Analyse • Automatische Datenextraktion`, 20, yPosition + 5)
+
+  // Footer with AI branding
   const pageCount = doc.getNumberOfPages()
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i)
+
+    // Footer background
+    doc.setFillColor(248, 248, 248)
+    doc.rect(0, 280, 210, 20, 'F')
+
+    // Footer border
+    doc.setDrawColor(220, 38, 38)
+    doc.setLineWidth(0.5)
+    doc.line(0, 280, 210, 280)
+
+    // Page info
     doc.setFontSize(8)
     doc.setTextColor(secondaryColor)
     doc.text(`Seite ${i} von ${pageCount}`, 20, 290)
-    doc.text(`Erstellt am ${new Date().toLocaleString('de-DE')}`, 150, 290)
+    doc.text(`Erstellt am ${new Date().toLocaleString('de-DE')}`, 100, 290)
+
+    // AI branding
+    doc.setFontSize(8)
+    doc.setTextColor(220, 38, 38)
+    doc.setFont('helvetica', 'bold')
+    doc.text('🤖 KYC AI System', 150, 290)
   }
 
   // Save the PDF

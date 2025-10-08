@@ -2,6 +2,7 @@
 import { useKycStore } from '@/stores/kyc';
 import type { KycQuestion } from '@/types/kyc';
 import { computed, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 
 interface Props {
   onSubmit?: (entity: string, questions: KycQuestion[]) => void
@@ -16,6 +17,7 @@ const emit = defineEmits<{
 
 // Store
 const kycStore = useKycStore()
+const router = useRouter()
 
 // Form state
 const entity = ref('')
@@ -309,10 +311,9 @@ const removeCustomQuestion = (index: number) => {
             antwort.frage_id,
             {
               answer: antwort.antwort,
-              source: antwort.quelle,
+              quellen: antwort.quellen || [], // Array mit {titel, url} Objekten
               verificationStatus: 'verified' as const,
-              confidence: 'high' as const,
-              quelle: antwort.quelle // Für PDF-Kompatibilität
+              confidence: 'high' as const
             }
           ])
         )
@@ -321,7 +322,7 @@ const removeCustomQuestion = (index: number) => {
           id: `report_${Date.now()}`,
           entity: companyToResearch,
           answers: reportAnswers, // Jetzt als { frage_id: answer_object } Format
-          sources: Object.fromEntries(rawResult.antworten.map((a: any) => [a.frage_id, a.quelle])),
+          sources: Object.fromEntries(rawResult.antworten.map((a: any) => [a.frage_id, a.quellen || []])),
           status: 'pending_confirmation' as const,
           timestamp: new Date().toISOString(),
           questions: finalQuestions,
@@ -353,10 +354,20 @@ const removeCustomQuestion = (index: number) => {
     // Handler für Report-Bestätigung - WICHTIG: Bericht zur Liste hinzufügen!
     const handleReportConfirm = (report: any) => {
       console.log('✅ Report confirmed, adding to store:', report)
-      kycStore.confirmReport(report) // ← Das war der fehlende Aufruf!
+
+      // Bericht zum Store hinzufügen
+      kycStore.confirmReport(report)
+
+      // Popup schließen
       showReportPopup.value = false
-      // Optional: Zur Reports-Übersicht navigieren
-      // router.push('/reports')
+
+      // Erfolgs-Feedback anzeigen
+      const userChoice = confirm('✅ Bericht erfolgreich gespeichert!\n\nDer Bericht wurde zur Berichts-Übersicht hinzugefügt.\n\nMöchten Sie jetzt zur Berichts-Übersicht wechseln?')
+
+      // Navigation basierend auf Benutzerauswahl
+      if (userChoice) {
+        router.push('/reports')
+      }
     }
 
     const handleReportCancel = () => {
@@ -419,7 +430,7 @@ const removeCustomQuestion = (index: number) => {
 </script>
 
 <template>
-  <div class="space-y-8">
+  <div class="space-y-12">
     <!-- Step Navigation -->
     <div class="bg-white rounded-lg shadow-sm p-4">
       <div class="flex items-center justify-between">
@@ -427,9 +438,9 @@ const removeCustomQuestion = (index: number) => {
           <!-- Current Step Only -->
           <div
             class="flex items-center space-x-3 px-4 py-3 rounded-lg text-white"
-            style="background-color: #1E3B64"
+            style="background-color: #DC2626"
           >
-            <div class="w-6 h-6 rounded-full bg-white flex items-center justify-center text-xs font-medium" style="color: #1E3B64">
+            <div class="w-6 h-6 rounded-full bg-white flex items-center justify-center text-xs font-medium" style="color: #DC2626">
               {{ currentStepIndex + 1 }}
             </div>
             <div class="text-left">
@@ -484,7 +495,7 @@ const removeCustomQuestion = (index: number) => {
             <input
               v-model="entity"
               type="text"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900"
               placeholder="z.B. Musterfirma GmbH"
               @keyup.enter="handleCompanySearch"
             />
@@ -494,7 +505,7 @@ const removeCustomQuestion = (index: number) => {
             <input
               v-model="country"
               type="text"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900"
               placeholder="z.B. München, Deutschland oder nur Berlin (leer = Deutschland)"
             />
           </div>
@@ -503,7 +514,7 @@ const removeCustomQuestion = (index: number) => {
             <input
               v-model="industry"
               type="text"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900"
               placeholder="z.B. Finanzdienstleistungen (leer = unbekannt)"
             />
           </div>
@@ -518,9 +529,9 @@ const removeCustomQuestion = (index: number) => {
             @click="handleCompanySearch"
             :disabled="!isSearchValid || isSearching"
             class="px-4 py-2 text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            style="background-color: #1E3B64"
-            onmouseover="this.style.backgroundColor='#0f2a4a'"
-            onmouseout="this.style.backgroundColor='#1E3B64'"
+            style="background-color: #DC2626"
+            onmouseover="this.style.backgroundColor='#B91C1C'"
+            onmouseout="this.style.backgroundColor='#DC2626'"
           >
             <span v-if="isSearching">Suche läuft...</span>
             <span v-else>Unternehmen suchen</span>
@@ -539,8 +550,8 @@ const removeCustomQuestion = (index: number) => {
             :key="company.id"
             @click="handleCompanySelect(company)"
             class="p-4 border border-gray-200 rounded-lg cursor-pointer transition-colors"
-            style="--hover-border: #1E3B64; --hover-bg: rgba(30, 59, 100, 0.1);"
-            onmouseover="this.style.borderColor='#1E3B64'; this.style.backgroundColor='rgba(30, 59, 100, 0.1)'"
+            style="--hover-border: #DC2626; --hover-bg: rgba(220, 38, 38, 0.1);"
+            onmouseover="this.style.borderColor='#DC2626'; this.style.backgroundColor='rgba(220, 38, 38, 0.1)'"
             onmouseout="this.style.borderColor=''; this.style.backgroundColor=''"
           >
             <h4 class="font-medium text-gray-900">{{ company.name }}</h4>
@@ -575,7 +586,7 @@ const removeCustomQuestion = (index: number) => {
             <button
               @click="activeTab = 'standard'"
               class="flex items-center space-x-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors"
-              :class="activeTab === 'standard' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+              :class="activeTab === 'standard' ? 'border-red-600 text-red-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
             >
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -587,7 +598,7 @@ const removeCustomQuestion = (index: number) => {
               :key="group.id"
               @click="activeTab = group.id"
               class="flex items-center space-x-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors"
-              :class="activeTab === group.id ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+              :class="activeTab === group.id ? 'border-red-600 text-red-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
             >
               <span>{{ group.title }} {{ group.questions.length }}</span>
             </button>
@@ -603,10 +614,10 @@ const removeCustomQuestion = (index: number) => {
               <input
                 type="checkbox"
                 v-model="showStandardQuestions"
-                class="absolute block w-6 h-6 rounded-full bg-white border-2 border-gray-300 appearance-none cursor-pointer transition-transform duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                class="absolute block w-6 h-6 rounded-full bg-white border-2 border-gray-300 appearance-none cursor-pointer transition-transform duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                 :style="{ top: '-1px', left: '-1px', transform: showStandardQuestions ? 'translateX(24px)' : 'translateX(0px)' }"
               />
-                <label class="block h-6 overflow-hidden rounded-full cursor-pointer transition-colors duration-200 ease-in-out" :style="{ backgroundColor: showStandardQuestions ? '#1E3B64' : '#D1D5DB' }"></label>
+                <label class="block h-6 overflow-hidden rounded-full cursor-pointer transition-colors duration-200 ease-in-out" :style="{ backgroundColor: showStandardQuestions ? '#DC2626' : '#D1D5DB' }"></label>
               </div>
               <span class="text-sm text-gray-600">10 Fragen</span>
             </div>
@@ -630,7 +641,7 @@ const removeCustomQuestion = (index: number) => {
                     </span>
                     <button
                       @click="selectedStandardQuestions = new Set(standardQuestions.map(q => q.id))"
-                      class="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                      class="px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
                     >
                       Alle hinzufügen
                     </button>
@@ -659,8 +670,8 @@ const removeCustomQuestion = (index: number) => {
                       <div
                         class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all duration-200 cursor-pointer"
                         :class="selectedStandardQuestions.has(question.id)
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-blue-50 text-blue-600 border-2 border-blue-200 hover:border-blue-300'"
+                          ? 'bg-red-600 text-white'
+                          : 'bg-red-50 text-red-600 border-2 border-red-200 hover:border-red-300'"
                       >
                         {{ index + 1 }}
                       </div>
@@ -696,7 +707,7 @@ const removeCustomQuestion = (index: number) => {
                     </span>
                     <button
                       @click="toggleGroup(group.id, true)"
-                      class="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                      class="px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
                     >
                       Alle hinzufügen
                     </button>
@@ -725,8 +736,8 @@ const removeCustomQuestion = (index: number) => {
                       <div
                         class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all duration-200 cursor-pointer"
                         :class="selectedQuestions.has(question.id)
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-blue-50 text-blue-600 border-2 border-blue-200 hover:border-blue-300'"
+                          ? 'bg-red-600 text-white'
+                          : 'bg-red-50 text-red-600 border-2 border-red-200 hover:border-red-300'"
                       >
                         {{ index + 1 }}
                       </div>
@@ -751,9 +762,9 @@ const removeCustomQuestion = (index: number) => {
             <button
               @click="addCustomQuestion"
               class="px-4 py-2 text-sm text-white rounded-lg transition-colors"
-              style="background-color: #1E3B64;"
-              onmouseover="this.style.backgroundColor='#0f2a4a'"
-              onmouseout="this.style.backgroundColor='#1E3B64'"
+              style="background-color: #DC2626;"
+              onmouseover="this.style.backgroundColor='#B91C1C'"
+              onmouseout="this.style.backgroundColor='#DC2626'"
             >
               + Frage hinzufügen
             </button>
@@ -772,7 +783,7 @@ const removeCustomQuestion = (index: number) => {
               <input
                 v-model="question.text"
                 type="text"
-                class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors text-gray-900"
                 placeholder="Eigene Frage eingeben..."
               />
               <button
@@ -795,8 +806,8 @@ const removeCustomQuestion = (index: number) => {
             :disabled="!isFormValid || isResearching"
             class="px-8 py-3 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-base font-medium shadow-md hover:shadow-lg transform hover:scale-[1.02] disabled:transform-none"
             style="background-color: #1E3B64;"
-            onmouseover="this.style.backgroundColor='#0f2a4a'"
-            onmouseout="this.style.backgroundColor='#1E3B64'"
+            onmouseover="this.style.backgroundColor='#B91C1C'"
+            onmouseout="this.style.backgroundColor='#DC2626'"
           >
             <div class="flex items-center justify-center space-x-2">
               <!-- Lade-Spinner wenn Recherche läuft -->
@@ -821,11 +832,33 @@ const removeCustomQuestion = (index: number) => {
             <h2 class="text-xl font-semibold text-gray-900">Mieter Recherche Bericht</h2>
             <p class="text-sm text-gray-500">{{ currentReport.entity }}</p>
           </div>
-          <button @click="showReportPopup = false" class="text-gray-400 hover:text-gray-600">
-            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-          </button>
+          <div class="flex items-center space-x-6">
+            <!-- Action Buttons in Header -->
+            <button
+              @click="generatePDF"
+              class="p-3 rounded-md transition-colors hover:bg-gray-100"
+              title="PDF herunterladen"
+            >
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: #B91C1C">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+            </button>
+            <button
+              @click="handleReportConfirm(currentReport)"
+              class="p-3 rounded-md transition-colors hover:bg-gray-100"
+              title="Bericht bestätigen"
+            >
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: #DC2626">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </button>
+            <!-- Close Button -->
+            <button @click="showReportPopup = false" class="p-3 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
         </div>
 
         <!-- Content -->
@@ -844,29 +877,6 @@ const removeCustomQuestion = (index: number) => {
           </div>
         </div>
 
-        <!-- Footer -->
-        <div class="flex-shrink-0 px-6 py-4 border-t border-gray-200 flex gap-4">
-          <button
-            @click="handleReportCancel"
-            class="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-          >
-            Schließen
-          </button>
-          <button
-            @click="generatePDF"
-            class="flex-1 px-4 py-2 text-white rounded-md transition-colors"
-            style="background-color: #1E3B64"
-          >
-            PDF herunterladen
-          </button>
-          <button
-            @click="handleReportConfirm(currentReport)"
-            class="flex-1 px-4 py-2 text-white rounded-md transition-colors"
-            style="background-color: #10B981"
-          >
-            Bericht bestätigen
-          </button>
-        </div>
       </div>
     </div>
   </div>

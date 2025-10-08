@@ -90,10 +90,14 @@ class VerifyAmbiguous(BaseModel):
     mieter_eingabe: str
     vorschlaege: List[TenantSuggestion]
 
+class Quelle(BaseModel):
+    titel: str
+    url: str
+
 class Antwort(BaseModel):
     frage_id: str
     antwort: str
-    quelle: Optional[str] = None
+    quellen: List[Quelle] = []
 
 class ResearchSuccess(BaseModel):
     mieter: str
@@ -412,7 +416,7 @@ def generate_specific_query(frage_nummer: int, company_name: str, location: str)
     # Standard-Frage für unbekannte Nummern
     return f'"{company_name}" unternehmen {location_query}'
 
-async def generate_answer_from_results(frage_nummer: int, results: List[Dict[str, Any]], company_name: str, location: str = None) -> tuple[str, str]:
+async def generate_answer_from_results(frage_nummer: int, results: List[Dict[str, Any]], company_name: str, location: str = None) -> tuple[str, List[Quelle]]:
     """Generiert intelligente Antworten aus SearXNG-Ergebnissen mit erweitertem Web-Crawling"""
     
     if not results:
@@ -920,7 +924,7 @@ async def research_questions(request: ResearchRequest):
             question_results = await search_searxng(specific_query, request.land)
             
             # Generiere Basis-Antwort basierend auf den Suchergebnissen
-            antwort, quelle = await generate_answer_from_results(
+            antwort, quellen = await generate_answer_from_results(
                 frage_nummer, 
                 question_results, 
                 request.mieter,
@@ -944,7 +948,7 @@ async def research_questions(request: ResearchRequest):
             antworten.append(Antwort(
                 frage_id=frage_id,
                 antwort=enhanced_answer,
-                quelle=quelle
+                quellen=quellen
             ))
         
         return ResearchSuccess(

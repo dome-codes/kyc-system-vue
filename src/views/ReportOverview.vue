@@ -13,35 +13,32 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
               </svg>
             </button>
-            <div class="h-10 w-10 rounded-full flex items-center justify-center" style="background-color: #1E3B64">
-              <span class="text-white font-bold text-lg">O</span>
+            <div class="h-10 w-10 rounded-lg flex items-center justify-center shadow-md">
+              <img src="/logo.svg" alt="KYC Logo" class="h-10 w-10 object-contain" />
             </div>
             <div>
               <h1 class="text-xl font-semibold text-gray-900">Mieter Recherche Bericht</h1>
               <p class="text-sm text-gray-500">{{ report?.entity }}</p>
             </div>
           </div>
-          <div class="flex items-center space-x-3">
+          <div class="flex items-center space-x-4">
             <button
               @click="downloadPDF"
-              class="flex items-center space-x-2 px-4 py-2 text-white rounded-lg transition-colors"
-              style="background-color: #1E3B64"
-              onmouseover="this.style.backgroundColor='#0f2a4a'"
-              onmouseout="this.style.backgroundColor='#1E3B64'"
+              class="p-3 rounded-md transition-colors hover:bg-gray-100"
+              title="PDF herunterladen"
             >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: #B91C1C">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
               </svg>
-              <span>PDF herunterladen</span>
             </button>
             <button
               @click="confirmReport"
-              class="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              class="p-3 rounded-md transition-colors hover:bg-gray-100"
+              title="Bericht bestätigen"
             >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: #DC2626">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
-              <span>Bericht bestätigen</span>
             </button>
           </div>
         </div>
@@ -51,64 +48,27 @@
     <!-- Main Content -->
     <main class="container mx-auto px-4 py-8">
       <div class="max-w-6xl mx-auto">
-        <!-- Report Summary Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-sm font-medium text-gray-600">Gesamtfragen</p>
-                <p class="text-2xl font-bold text-gray-900">{{ report?.summary?.totalQuestions || 0 }}</p>
-              </div>
-              <div class="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <!-- Modern Report Header -->
+        <div class="bg-gradient-to-r from-red-50 to-red-100 rounded-xl p-8 mb-8 border border-red-200">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+              <div class="h-16 w-16 rounded-xl flex items-center justify-center shadow-lg" style="background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%)">
+                <svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
               </div>
-            </div>
-          </div>
-
-          <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-            <div class="flex items-center justify-between">
               <div>
-                <p class="text-sm font-medium text-gray-600">Beantwortet</p>
-                <p class="text-2xl font-bold text-green-600">{{ report?.summary?.completedQuestions || 0 }}</p>
+                <h1 class="text-2xl font-bold text-gray-900">{{ report?.entity }}</h1>
+                <p class="text-red-600 font-medium">KYC Recherche Bericht</p>
+                <p class="text-sm text-gray-600 mt-1">{{ report?.summary?.totalQuestions || 0 }} Fragen • {{ report?.summary?.completedQuestions || 0 }} beantwortet</p>
               </div>
-              <div class="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            </div>
+            <div class="text-right">
+              <div class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-white text-green-700 border border-green-200 shadow-sm">
+                <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-sm font-medium text-gray-600">Risiko-Score</p>
-                <p class="text-2xl font-bold" :class="getRiskScoreColor(report?.summary?.riskScore || 0)">
-                  {{ report?.summary?.riskScore || 0 }}%
-                </p>
-              </div>
-              <div class="h-12 w-12 rounded-lg flex items-center justify-center" :class="getRiskScoreBgColor(report?.summary?.riskScore || 0)">
-                <svg class="h-6 w-6" :class="getRiskScoreIconColor(report?.summary?.riskScore || 0)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-sm font-medium text-gray-600">Compliance-Score</p>
-                <p class="text-2xl font-bold" :class="getComplianceScoreColor(report?.summary?.complianceScore || 0)">
-                  {{ report?.summary?.complianceScore || 0 }}%
-                </p>
-              </div>
-              <div class="h-12 w-12 rounded-lg flex items-center justify-center" :class="getComplianceScoreBgColor(report?.summary?.complianceScore || 0)">
-                <svg class="h-6 w-6" :class="getComplianceScoreIconColor(report?.summary?.complianceScore || 0)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                </svg>
+                Bestätigt
               </div>
             </div>
           </div>
@@ -131,16 +91,43 @@
                     class="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow"
                   >
                     <div class="flex items-start space-x-3">
-                      <div class="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-medium">
+                      <div class="flex-shrink-0 w-6 h-6 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-sm font-medium">
                         {{ getQuestionNumber(questionId) }}
                       </div>
                       <div class="flex-1">
                         <h3 class="font-medium text-gray-900 mb-2">
                           {{ getQuestionText(questionId) }}
                         </h3>
-                        <p class="text-gray-600 text-sm leading-relaxed">
-                          {{ answer }}
-                        </p>
+                        <div class="space-y-3">
+                          <!-- Answer Text -->
+                          <p class="text-gray-700 leading-relaxed">
+                            {{ typeof answer === 'object' ? answer.answer : answer }}
+                          </p>
+
+                          <!-- Sources -->
+                          <div v-if="typeof answer === 'object' && answer.quellen && answer.quellen.length > 0" class="space-y-2">
+                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Quellen:</p>
+                            <div class="space-y-1">
+                              <a
+                                v-for="(quelle, index) in answer.quellen"
+                                :key="index"
+                                :href="quelle.url"
+                                target="_blank"
+                                class="inline-flex items-center text-sm text-red-600 hover:text-red-800 hover:underline"
+                              >
+                                <svg class="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                </svg>
+                                {{ quelle.titel }}
+                              </a>
+                            </div>
+                          </div>
+
+                          <!-- Fallback for old format -->
+                          <div v-else-if="typeof answer === 'object' && answer.source" class="text-xs text-gray-500">
+                            Quelle: {{ answer.source }}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -149,103 +136,36 @@
             </div>
           </div>
 
-          <!-- Sidebar -->
+          <!-- Simplified Sidebar -->
           <div class="space-y-6">
-            <!-- Report Info -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-              <div class="p-6 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-900">Bericht-Informationen</h3>
-              </div>
-              <div class="p-6 space-y-4">
-                <div>
-                  <p class="text-sm font-medium text-gray-600">Unternehmen</p>
-                  <p class="text-gray-900 font-medium">{{ report?.entity }}</p>
+            <!-- Quick Info -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">Bericht-Details</h3>
+              <div class="space-y-3">
+                <div class="flex justify-between">
+                  <span class="text-gray-600">Erstellt:</span>
+                  <span class="text-gray-900">{{ formatDate(report?.timestamp) }}</span>
                 </div>
-                <div>
-                  <p class="text-sm font-medium text-gray-600">Erstellt am</p>
-                  <p class="text-gray-900">{{ formatDate(report?.timestamp) }}</p>
-                </div>
-                <div>
-                  <p class="text-sm font-medium text-gray-600">Status</p>
-                  <span
-                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                    :class="report?.status === 'confirmed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'"
-                  >
-                    {{ report?.status === 'confirmed' ? 'Bestätigt' : 'Ausstehend' }}
-                  </span>
-                </div>
-                <div>
-                  <p class="text-sm font-medium text-gray-600">Bericht-ID</p>
-                  <p class="text-gray-900 font-mono text-sm">{{ report?.id }}</p>
+                <div class="flex justify-between">
+                  <span class="text-gray-600">ID:</span>
+                  <span class="text-gray-900 font-mono text-sm">{{ report?.id?.slice(-8) }}</span>
                 </div>
               </div>
             </div>
 
-            <!-- Risk Assessment -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-              <div class="p-6 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-900">Risiko-Bewertung</h3>
-              </div>
-              <div class="p-6 space-y-4">
-                <div>
-                  <div class="flex justify-between text-sm mb-2">
-                    <span class="text-gray-600">Gesamtrisiko</span>
-                    <span class="font-medium" :class="getRiskScoreColor(report?.summary?.riskScore || 0)">
-                      {{ report?.summary?.riskScore || 0 }}%
-                    </span>
-                  </div>
-                  <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      class="h-2 rounded-full transition-all duration-300"
-                      :class="getRiskScoreBarColor(report?.summary?.riskScore || 0)"
-                      :style="{ width: `${report?.summary?.riskScore || 0}%` }"
-                    ></div>
-                  </div>
-                </div>
-                <div>
-                  <div class="flex justify-between text-sm mb-2">
-                    <span class="text-gray-600">Compliance</span>
-                    <span class="font-medium" :class="getComplianceScoreColor(report?.summary?.complianceScore || 0)">
-                      {{ report?.summary?.complianceScore || 0 }}%
-                    </span>
-                  </div>
-                  <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      class="h-2 rounded-full transition-all duration-300"
-                      :class="getComplianceScoreBarColor(report?.summary?.complianceScore || 0)"
-                      :style="{ width: `${report?.summary?.complianceScore || 0}%` }"
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Actions -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-              <div class="p-6 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-900">Aktionen</h3>
-              </div>
-              <div class="p-6 space-y-3">
+            <!-- Quick Actions -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">Aktionen</h3>
+              <div class="space-y-3">
                 <button
                   @click="downloadPDF"
                   class="w-full flex items-center justify-center space-x-2 px-4 py-3 text-white rounded-lg transition-colors"
-                  style="background-color: #1E3B64"
-                  onmouseover="this.style.backgroundColor='#0f2a4a'"
-                  onmouseout="this.style.backgroundColor='#1E3B64'"
+                  style="background-color: #DC2626"
                 >
                   <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                   </svg>
                   <span>PDF herunterladen</span>
-                </button>
-                <button
-                  @click="confirmReport"
-                  class="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                  </svg>
-                  <span>Bericht bestätigen</span>
                 </button>
                 <button
                   @click="$router.push('/')"

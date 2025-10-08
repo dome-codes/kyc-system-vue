@@ -13,7 +13,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
               </svg>
             </button>
-            <div class="h-10 w-10 rounded-full flex items-center justify-center" style="background-color: #1E3B64">
+            <div class="h-10 w-10 rounded-full flex items-center justify-center" style="background-color: #DC2626">
               <span class="text-white font-bold text-lg">O</span>
             </div>
             <div>
@@ -25,8 +25,8 @@
             <button
               @click="$router.push('/')"
               class="flex items-center space-x-2 px-4 py-2 text-white rounded-lg transition-colors"
-              style="background-color: #1E3B64"
-              onmouseover="this.style.backgroundColor='#0f2a4a'"
+              style="background-color: #DC2626"
+              onmouseover="this.style.backgroundColor='#B91C1C'"
               onmouseout="this.style.backgroundColor='#1E3B64'"
             >
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,8 +85,8 @@
             <button
               @click="$router.push('/')"
               class="mt-4 px-6 py-3 text-white rounded-lg transition-colors"
-              style="background-color: #1E3B64"
-              onmouseover="this.style.backgroundColor='#0f2a4a'"
+              style="background-color: #DC2626"
+              onmouseover="this.style.backgroundColor='#B91C1C'"
               onmouseout="this.style.backgroundColor='#1E3B64'"
             >
               Ersten Bericht erstellen
@@ -132,8 +132,8 @@
                   <button
                     @click="downloadReportPDF(report)"
                     class="px-4 py-2 text-white rounded-lg transition-colors"
-                    style="background-color: #1E3B64"
-                    onmouseover="this.style.backgroundColor='#0f2a4a'"
+                    style="background-color: #DC2626"
+                    onmouseover="this.style.backgroundColor='#B91C1C'"
                     onmouseout="this.style.backgroundColor='#1E3B64'"
                   >
                     Download
