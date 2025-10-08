@@ -36,11 +36,15 @@ export const generateKycReportPDF = (report: KycReport): void => {
     return y + 10
   }
 
-  // Header with Logo
-  doc.setFillColor(220, 38, 38) // Red background
+  // Header with Logo - White background for better logo visibility
+  doc.setFillColor(255, 255, 255) // White background
   doc.rect(0, 0, 210, 35, 'F')
 
-  // Add PNG Logo
+  // Red accent line at bottom of header
+  doc.setFillColor(220, 38, 38)
+  doc.rect(0, 32, 210, 3, 'F')
+
+  // Add PNG Logo on white background
   try {
     doc.addImage('/src/assets/logo.png', 'PNG', 15, 8, 20, 20)
   } catch (error) {
@@ -53,19 +57,11 @@ export const generateKycReportPDF = (report: KycReport): void => {
     doc.text('LOGO', 22, 20)
   }
 
-  // Main title
+  // Main title - now in red on white background
   doc.setFontSize(18)
-  doc.setTextColor(255, 255, 255)
-  doc.setFont('helvetica', 'bold')
-  doc.text('Mieter Recherche Bericht', 45, 15)
-
-  // AI Badge
-  doc.setFillColor(255, 255, 255)
-  doc.rect(160, 8, 45, 12, 'F')
-  doc.setFontSize(8)
   doc.setTextColor(220, 38, 38)
   doc.setFont('helvetica', 'bold')
-  doc.text('AI Generated', 165, 16)
+  doc.text('Mieter Recherche Bericht', 45, 15)
 
   yPosition = 50
 
