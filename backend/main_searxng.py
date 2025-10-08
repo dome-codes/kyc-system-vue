@@ -366,36 +366,53 @@ def determine_branche(name: str, content: str, url: str = "") -> str:
 
 # Standard-Fragen-Mapping (ID -> Frage & Suchestrategie)
 STANDARD_QUESTIONS = {
-    1: ("Vollständiger Firmenname?", "{0}"),
-    2: ("Rechtsform des Unternehmens?", "{0}"),
-    3: ("Handelsregisternummer?", "{0}"),
-    4: ("Gründungsdatum?", "{0}"),
-    5: ("Vollständige Geschäftsadresse?", "{0}"),
-    6: ("Geschäftszweck / Unternehmensgegenstand?", "{0}"),
-    7: ("Geschäftsführung / Vorstand?", "{0}"),
-    8: ("Wirtschaftlich Berechtigte (25%+)?", "{0}"),
-    9: ("Umsatz letztes Geschäftsjahr?", "{0}"),
-    10: ("Anzahl der Mitarbeiter?", "{0}"),
-    11: ("Risiko-Bewertung?", "{0}"),
-    12: ("Compliance-Status?", "{0}"),
-    13: ("Finanzierungsstatus?", "{0}"),
-    14: ("Presse / Ruf", "{0}"),
-    15: ("Insolvenzzeichen?", "{0}")
+    1: ("Vollständiger Firmenname?", "{0} {1}"),
+    2: ("Rechtsform des Unternehmens?", "{0} {1} impressum"),
+    3: ("Handelsregisternummer?", "{0} {1} impressum"),
+    4: ("Gründungsdatum?", "{0} {1} impressum"),
+    5: ("Vollständige Geschäftsadresse?", "{0} {1} impressum"),
+    6: ("Geschäftszweck / Unternehmensgegenstand?", "{0} {1}"),
+    7: ("Geschäftsführung / Vorstand?", "{0} {1} impressum"),
+    8: ("Wirtschaftlich Berechtigte (25%+)?", "{0} {1} impressum"),
+    9: ("Umsatz letztes Geschäftsjahr?", "{0} {1}"),
+    10: ("Anzahl der Mitarbeiter?", "{0} {1}"),
+    11: ("Risiko-Bewertung?", "{0} {1}"),
+    12: ("Compliance-Status?", "{0} {1} impressum"),
+    13: ("Finanzierungsstatus?", "{0} {1}"),
+    14: ("Presse / Ruf", "{0} {1}"),
+    15: ("Insolvenzzeichen?", "{0} {1}")
 }
 
 def generate_specific_query(frage_nummer: int, company_name: str, location: str) -> str:
     """Generiert spezifische SearXNG-Queries basierend auf Standard-Fragen"""
     
+    # Verbessere Location-Handling für Stadt + Land Kombinationen
+    location_parts = []
+    if location and location != "Deutschland":
+        # Wenn Komma enthalten ist, teile in Stadt und Land auf
+        if ',' in location:
+            parts = [part.strip() for part in location.split(',')]
+            location_parts.extend(parts)
+        else:
+            # Einzelne Eingabe - könnte Stadt oder Land sein
+            location_parts.append(location)
+    
+    # Füge Deutschland als Fallback hinzu wenn nicht explizit angegeben
+    if not any('deutschland' in part.lower() for part in location_parts):
+        location_parts.append('Deutschland')
+    
+    location_query = ' '.join(location_parts)
+    
     question_info = STANDARD_QUESTIONS.get(frage_nummer)
     if question_info:
         question_text, query_template = question_info
         # Ersetze Platzhalter {0} = company_name, {1} = location
-        return query_template.format(company_name, location)
+        return query_template.format(company_name, location_query)
     
     # Standard-Frage für unbekannte Nummern
-    return f'"{company_name}" unternehmen {location}'
+    return f'"{company_name}" unternehmen {location_query}'
 
-async def generate_answer_from_results(frage_nummer: int, results: List[Dict[str, Any]], company_name: str) -> tuple[str, str]:
+async def generate_answer_from_results(frage_nummer: int, results: List[Dict[str, Any]], company_name: str, location: str = None) -> tuple[str, str]:
     """Generiert intelligente Antworten aus SearXNG-Ergebnissen mit erweitertem Web-Crawling"""
     
     if not results:
@@ -449,7 +466,7 @@ async def generate_answer_from_results(frage_nummer: int, results: List[Dict[str
             antwort = extract_func(title, full_content, url, company_name)
             
             # Bewerte die Qualität der Antwort
-            score = evaluate_answer_quality(antwort, frage_nummer)
+            score = evaluate_answer_quality(antwort, frage_nummer, location)
             print(f"📊 Answer quality score: {score} for {url}")
             
             # Wenn diese Antwort besser ist, verwende sie
@@ -481,7 +498,7 @@ async def generate_answer_from_results(frage_nummer: int, results: List[Dict[str
     print(f"🏆 Best answer selected with score {best_score} from {best_url}")
     return best_answer, best_url
 
-def evaluate_answer_quality(answer: str, frage_nummer: int) -> int:
+def evaluate_answer_quality(answer: str, frage_nummer: int, location: str = None) -> int:
     """Bewertet die Qualität einer Antwort (0-10)"""
     if not answer:
         return 0
@@ -492,6 +509,19 @@ def evaluate_answer_quality(answer: str, frage_nummer: int) -> int:
     # Basis-Punkte für verschiedene Indikatoren
     if len(answer) > 50:  # Ausführliche Antwort
         score += 2
+    
+    # Location-Priorität: Bonus für korrekte Standort-Erwähnung
+    if location and location.lower() in answer_lower:
+        score += 3  # Großer Bonus für korrekte Location
+        print(f"🎯 Location bonus: {location} found in answer")
+    
+    # Abzug für falsche Standorte (wenn Location angegeben)
+    if location:
+        wrong_locations = ['stuttgart', 'berlin', 'hamburg', 'münchen', 'köln', 'frankfurt']
+        for wrong_loc in wrong_locations:
+            if wrong_loc in answer_lower and location.lower() not in answer_lower:
+                score -= 2  # Abzug für falsche Standorte
+                print(f"⚠️ Wrong location penalty: {wrong_loc} found but {location} expected")
     
     if any(word in answer_lower for word in ['verfügbar', 'details unter', 'weitere informationen']):
         score -= 2  # Abzug für generische Antworten
@@ -893,7 +923,8 @@ async def research_questions(request: ResearchRequest):
             antwort, quelle = await generate_answer_from_results(
                 frage_nummer, 
                 question_results, 
-                request.mieter
+                request.mieter,
+                request.land
             )
             
             # 🤖 LLM-Verbesserung der Antwort (falls verfügbar)
