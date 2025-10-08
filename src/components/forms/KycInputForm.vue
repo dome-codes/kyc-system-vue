@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useKycStore } from '@/stores/kyc';
-import type { KycQuestion } from '@/types/kyc';
+import type { KycQuestion, KycReport } from '@/types/kyc';
 import { computed, ref, watch } from 'vue';
 
 interface Props {
@@ -337,6 +337,20 @@ const removeCustomQuestion = (index: number) => {
           showReportPopup: showReportPopup.value,
           currentReport: currentReport.value
         })
+      }
+
+      // Handler für Report-Bestätigung - WICHTIG: Bericht zur Liste hinzufügen!
+      const handleReportConfirm = (report: KycReport) => {
+        console.log('✅ Report confirmed, adding to store:', report)
+        kycStore.confirmReport(report) // ← Das war der fehlende Aufruf!
+        showReportPopup.value = false
+        // Optional: Zur Reports-Übersicht navigieren
+        // router.push('/reports')
+      }
+
+      const handleReportCancel = () => {
+        showReportPopup.value = false
+      }
 
       } catch (error) {
         console.error('❌ Research error:', error)
@@ -834,7 +848,7 @@ const removeCustomQuestion = (index: number) => {
         <!-- Footer -->
         <div class="flex-shrink-0 px-6 py-4 border-t border-gray-200 flex gap-4">
           <button
-            @click="showReportPopup = false"
+            @click="handleReportCancel"
             class="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
           >
             Schließen
@@ -845,6 +859,13 @@ const removeCustomQuestion = (index: number) => {
             style="background-color: #1E3B64"
           >
             PDF herunterladen
+          </button>
+          <button
+            @click="handleReportConfirm(currentReport)"
+            class="flex-1 px-4 py-2 text-white rounded-md transition-colors"
+            style="background-color: #10B981"
+          >
+            Bericht bestätigen
           </button>
         </div>
       </div>
