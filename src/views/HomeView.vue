@@ -38,13 +38,15 @@ const handleReportCancel = () => {
     <header class="bg-white shadow-sm">
       <div class="container mx-auto px-4 py-6">
         <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-3">
-            <div class="h-10 w-10 rounded-full flex items-center justify-center" style="background-color: #1E3B64">
-              <span class="text-white font-bold text-lg">O</span>
+          <div class="flex items-center space-x-8">
+            <!-- Logo Container - Default KYC Logo (SVG) -->
+            <div class="h-12 w-12 rounded-lg flex items-center justify-center shadow-md">
+              <!-- Default KYC Logo -->
+              <img src="/logo.svg" alt="KYC Logo" class="h-12 w-12 object-contain" />
             </div>
             <div>
-              <h1 class="text-xl font-semibold text-gray-900">Mieter Recherche Quick Check</h1>
-              <p class="text-sm text-gray-500">Schnelle Unternehmensrecherche</p>
+              <h1 class="text-xl font-semibold text-gray-900">KYC Quick Check</h1>
+              <p class="text-sm text-gray-500">Unternehmensrecherche</p>
             </div>
           </div>
           <div class="flex items-center gap-2 text-sm text-gray-500">
