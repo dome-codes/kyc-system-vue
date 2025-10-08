@@ -40,34 +40,18 @@ export const generateKycReportPDF = (report: KycReport): void => {
   doc.setFillColor(220, 38, 38) // Red background
   doc.rect(0, 0, 210, 35, 'F')
 
-  // Add Logo (PNG will be used in future)
-  // For now, create a placeholder that can be easily replaced with PNG
-
-  // Logo placeholder - will be replaced with PNG logo
-  doc.setFillColor(220, 38, 38)
-  doc.rect(15, 8, 20, 20, 'F')
-
-  // Simple logo placeholder (no text, just shape)
-  doc.setFillColor(255, 255, 255)
-  doc.rect(19, 12, 8, 10, 'F')
-
-  // Document lines
-  doc.setFillColor(220, 38, 38)
-  doc.rect(20, 13, 4, 0.5, 'F')
-  doc.rect(20, 14.5, 5, 0.5, 'F')
-  doc.rect(20, 16, 3, 0.5, 'F')
-  doc.rect(20, 17.5, 4, 0.5, 'F')
-  doc.rect(20, 19, 3.5, 0.5, 'F')
-
-  // Info circle
-  doc.setFillColor(255, 255, 255)
-  doc.circle(30, 16, 2.5, 'F')
-  doc.setFillColor(220, 38, 38)
-  doc.circle(30, 15, 0.5, 'F')
-  doc.rect(29.5, 16.5, 1, 1.5, 'F')
-
-  // TODO: Replace with PNG logo
-  // doc.addImage('/logo.png', 'PNG', 15, 8, 20, 20)
+  // Add PNG Logo
+  try {
+    doc.addImage('/src/assets/logo.png', 'PNG', 15, 8, 20, 20)
+  } catch (error) {
+    // Fallback: Simple placeholder if PNG not found
+    doc.setFillColor(220, 38, 38)
+    doc.rect(15, 8, 20, 20, 'F')
+    doc.setFontSize(8)
+    doc.setTextColor(255, 255, 255)
+    doc.setFont('helvetica', 'bold')
+    doc.text('LOGO', 22, 20)
+  }
 
   // Main title
   doc.setFontSize(18)

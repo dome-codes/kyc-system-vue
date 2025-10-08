@@ -14,7 +14,7 @@
               </svg>
             </button>
             <div class="h-10 w-10 rounded-lg flex items-center justify-center shadow-md">
-              <img src="/logo.svg" alt="KYC Logo" class="h-10 w-10 object-contain" />
+              <img src="/src/assets/logo.png" alt="KYC Logo" class="h-10 w-10 object-contain" />
             </div>
             <div>
               <h1 class="text-xl font-semibold text-gray-900">Mieter Recherche Bericht</h1>

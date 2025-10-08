@@ -42,7 +42,7 @@ const handleReportCancel = () => {
             <!-- Logo Container - Default KYC Logo (SVG) -->
             <div class="h-12 w-12 rounded-lg flex items-center justify-center shadow-md">
               <!-- Default KYC Logo -->
-              <img src="/logo.svg" alt="KYC Logo" class="h-12 w-12 object-contain" />
+              <img src="/src/assets/logo.png" alt="KYC Logo" class="h-12 w-12 object-contain" />
             </div>
             <div>
               <h1 class="text-xl font-semibold text-gray-900">KYC Quick Check</h1>
