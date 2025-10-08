@@ -23,7 +23,7 @@ export interface KycReport {
 // Backend API Types
 export interface ResearchRequest {
   mieter: string
-  fragen: string[]
+  fragen: number[]  // Changed from string[] to number[] for question numbers
   land?: string
   branche?: string
 }
@@ -33,6 +33,7 @@ export interface TenantSuggestion {
   name: string
   land?: string
   branche?: string
+  url?: string  // Source URL for transparency
 }
 
 export interface VerifyOk {

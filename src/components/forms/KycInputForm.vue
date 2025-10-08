@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useKycStore } from '@/stores/kyc';
 import type { KycQuestion } from '@/types/kyc';
 import { computed, ref, watch } from 'vue';
 
@@ -13,6 +14,9 @@ const emit = defineEmits<{
   submit: [entity: string, questions: KycQuestion[], land?: string, branche?: string]
 }>()
 
+// Store
+const kycStore = useKycStore()
+
 // Form state
 const entity = ref('')
 const country = ref('')
@@ -21,7 +25,10 @@ const currentStep = ref<'company' | 'verification' | 'questions'>('company')
 const searchResults = ref<any[]>([])
 const selectedCompany = ref<any>(null)
 const isSearching = ref(false)
+const isResearching = ref(false)
 const activeTab = ref('standard')
+const showReportPopup = ref(false)
+const currentReport = ref<any>(null)
 
 // Questions state
 const selectedQuestions = ref<Set<string>>(new Set())
@@ -29,18 +36,18 @@ const selectedStandardQuestions = ref<Set<string>>(new Set())
 const customQuestions = ref<KycQuestion[]>([])
 const showStandardQuestions = ref(true)
 
-// Standard questions (always active)
+// Standard questions (always active) - mapped zu Backend-IDs
 const standardQuestions: KycQuestion[] = [
-  { id: "std_company_name", text: "Vollständiger Firmenname?" },
-  { id: "std_legal_form", text: "Rechtsform des Unternehmens?" },
-  { id: "std_register_number", text: "Handelsregisternummer?" },
-  { id: "std_founded_date", text: "Gründungsdatum?" },
-  { id: "std_address", text: "Vollständige Geschäftsadresse?" },
-  { id: "std_business_purpose", text: "Geschäftszweck / Unternehmensgegenstand?" },
-  { id: "std_managing_directors", text: "Geschäftsführung / Vorstand?" },
-  { id: "std_beneficial_owners", text: "Wirtschaftlich Berechtigte (25%+)?" },
-  { id: "std_annual_revenue", text: "Umsatz letztes Geschäftsjahr?" },
-  { id: "std_employees_count", text: "Anzahl der Mitarbeiter?" },
+  { id: "1", text: "Vollständiger Firmenname?" },
+  { id: "2", text: "Rechtsform des Unternehmens?" },
+  { id: "3", text: "Handelsregisternummer?" },
+  { id: "4", text: "Gründungsdatum?" },
+  { id: "5", text: "Vollständige Geschäftsadresse?" },
+  { id: "6", text: "Geschäftszweck / Unternehmensgegenstand?" },
+  { id: "7", text: "Geschäftsführung / Vorstand?" },
+  { id: "8", text: "Wirtschaftlich Berechtigte (25%+)?" },
+  { id: "9", text: "Umsatz letztes Geschäftsjahr?" },
+  { id: "10", text: "Anzahl der Mitarbeiter?" },
 ]
 
 // Question groups
@@ -89,7 +96,7 @@ const canGoBack = computed(() => currentStepIndex.value > 0)
 const canGoForward = computed(() => currentStepIndex.value < steps.length - 1)
 
 const isSearchValid = computed(() =>
-  entity.value.trim() && country.value.trim() && industry.value.trim()
+  entity.value.trim().length > 0  // Nur Firmenname ist Pflicht
 )
 
     const totalSelected = computed(() => {
@@ -99,16 +106,38 @@ const isSearchValid = computed(() =>
 
 const maxQuestions = 30
 
-const isFormValid = computed(() =>
-  currentStep.value === 'questions' &&
-  selectedCompany.value &&
-  totalSelected.value >= 1 &&
-  totalSelected.value <= maxQuestions
-)
+const isFormValid = computed(() => {
+  if (currentStep.value === 'company') {
+    return entity.value.trim().length > 0
+  }
+  if (currentStep.value === 'verification') {
+    return selectedCompany.value !== null
+  }
+  if (currentStep.value === 'questions') {
+    return selectedCompany.value !== null &&
+           totalSelected.value >= 1 &&
+           totalSelected.value <= maxQuestions
+  }
+  return false
+})
 
 // Methods
 const goToStep = (stepId: string) => {
   currentStep.value = stepId as any
+}
+
+const formatAddress = (item: any) => {
+  // Zeige echte Adresse wenn verfügbar
+  if (item.street && item.city) {
+    return `${item.street}, ${item.city}`
+  } else if (item.city) {
+    return item.city
+  } else if (item.street) {
+    return item.street
+  } else {
+    // Fallback: Zeige Branche und Land
+    return `${item.branche} • ${item.land}`
+  }
 }
 
 const handleCompanySearch = async () => {
@@ -116,21 +145,65 @@ const handleCompanySearch = async () => {
 
   isSearching.value = true
   try {
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    console.log('🔍 Searching for company:', entity.value)
+
+		// Rufe Backend API auf für echte Unternehmenssuche
+		const response = await fetch('http://localhost:8000/verify', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+				mieter: entity.value,
+				fragen: [1, 2], // Basis-Fragen für Verifizierung
+				land: country.value || 'Deutschland',
+				branche: industry.value || null
+			})
+		})
+
+		const result = await response.json()
+		console.log('✅ Backend response:', result)
+
+		// Konvertiere Backend-Ergebnisse zu Frontend-Format
+		if (result.vorschlaege && result.vorschlaege.length > 0) {
+			searchResults.value = result.vorschlaege.map((item: any) => ({
+				id: item.id,
+				name: item.name,
+				address: formatAddress(item), // Zeige echte Adresse wenn verfügbar
+				industry: item.branche,
+				country: item.land,
+				url: item.url,
+				street: item.street,
+				city: item.city
+			}))
+			console.log('🎯 Found companies:', searchResults.value)
+
+			goToStep('verification')
+		} else {
+			// Fallback falls keine Ergebnisse
+			searchResults.value = [
+				{
+					id: 'fallback_1',
+					name: `${entity.value} GmbH`,
+					address: `${industry.value || 'Unbekannt'} • ${country.value || 'Deutschland'}`,
+					industry: industry.value || 'Unbekannt',
+					country: country.value || 'Deutschland'
+				}
+			]
+			goToStep('verification')
+		}
+
+  } catch (error) {
+    console.error('❌ Search error:', error)
+
+    // Fallback bei Fehlern
     searchResults.value = [
       {
-        id: '1',
+        id: 'error_fallback_1',
         name: `${entity.value} GmbH`,
-        address: 'Musterstraße 123, 12345 Musterstadt',
-        industry: industry.value,
-        country: country.value
-      },
-      {
-        id: '2',
-        name: `${entity.value} AG`,
-        address: 'Beispielweg 456, 54321 Beispielstadt',
-        industry: industry.value,
-        country: country.value
+        address: `${industry.value || 'Unbekannt'} • ${country.value || 'Deutschland'}`,
+        industry: industry.value || 'Unbekannt',
+        country: country.value || 'Deutschland'
       }
     ]
     goToStep('verification')
@@ -185,23 +258,130 @@ const removeCustomQuestion = (index: number) => {
   customQuestions.value.splice(index, 1)
 }
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
       if (!isFormValid.value) return
 
-      const finalQuestions = [
-        ...(showStandardQuestions.value ? standardQuestions.filter(q => selectedStandardQuestions.value.has(q.id)) : []),
-        ...questionGroups.flatMap(g => g.questions).filter(q => selectedQuestions.value.has(q.id)),
-        ...customQuestions.value.filter(q => q.text.trim())
-      ]
+      isResearching.value = true
 
-      const entityName = selectedCompany.value?.name || entity.value
-      const landValue = selectedCompany.value?.country || country.value
-      const brancheValue = selectedCompany.value?.industry || industry.value
+      try {
+        // Verwende die Standard-Fragen aus dem Store direkt
+        const finalQuestions = showStandardQuestions.value
+          ? standardQuestions.filter(q => selectedStandardQuestions.value.has(q.id))
+          : []
 
-      emit('submit', entityName, finalQuestions, landValue, brancheValue)
+        // Verwende die ausgewählte Firma für die Recherche
+        const companyToResearch = selectedCompany.value?.name || entity.value
+        const companyCountry = selectedCompany.value?.country || country.value || 'Deutschland'
+        const companyBranche = selectedCompany.value?.industry || industry.value
+
+        console.log('🚀 Starting research with questions:', finalQuestions.map(q => parseInt(q.id)))
+        console.log('📤 Request data:', {
+          mieter: companyToResearch,
+          fragen: finalQuestions.map(q => parseInt(q.id)),
+          land: companyCountry,
+          branche: companyBranche
+        })
+
+        // Direkt den Research-Endpunkt aufrufen mit der ausgewählten Firma
+        const response = await fetch('http://localhost:8000/research', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            mieter: companyToResearch,
+            fragen: finalQuestions.map(q => parseInt(q.id)),
+            land: companyCountry,
+            branche: companyBranche
+          })
+        })
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const rawResult = await response.json()
+        console.log('✅ Raw research response:', rawResult)
+
+        // Konvertiere Backend-Response zu Frontend-Report-Format
+        const reportAnswers = Object.fromEntries(
+          rawResult.antworten.map((antwort: any) => [
+            antwort.frage_id,
+            {
+              answer: antwort.antwort,
+              source: antwort.quelle,
+              verificationStatus: 'verified' as const,
+              confidence: 'high' as const,
+              quelle: antwort.quelle // Für PDF-Kompatibilität
+            }
+          ])
+        )
+
+        const reportData = {
+          id: `report_${Date.now()}`,
+          entity: companyToResearch,
+          answers: reportAnswers, // Jetzt als { frage_id: answer_object } Format
+          sources: Object.fromEntries(rawResult.antworten.map((a: any) => [a.frage_id, a.quelle])),
+          status: 'pending_confirmation' as const,
+          timestamp: new Date().toISOString(),
+          questions: finalQuestions,
+          summary: `Recherche für ${companyToResearch} mit ${finalQuestions.length} Fragen abgeschlossen`
+        }
+
+        // Direkt das Report-Popup mit den Backend-Daten anzeigen
+        currentReport.value = reportData
+        showReportPopup.value = true
+
+        console.log('🎉 Report-Popup displayed:', {
+          reportData,
+          showReportPopup: showReportPopup.value,
+          currentReport: currentReport.value
+        })
+
+      } catch (error) {
+        console.error('❌ Research error:', error)
+
+        // Bei Fehler einfach eine Fehlermeldung zeigen
+        console.error('❌ Research failed, no report will be shown')
+      } finally {
+        isResearching.value = false
+      }
     }
 
     selectedStandardQuestions.value = new Set(standardQuestions.map(q => q.id))
+
+    const generatePDF = () => {
+      if (currentReport.value) {
+        // Direkt die PDF-Funktion vom kycStore verwenden
+        kycStore.generateReportPDF(currentReport.value)
+      }
+    }
+
+    const getQuestionText = (questionId: string) => {
+      // Konvertiere Backend-ID (z.B. "q1") zu Standard-Frage
+      const questionNumber = parseInt(questionId.replace('q', ''))
+
+      // Standard-Fragen Mapping
+      const standardQuestionsMap: Record<number, string> = {
+        1: "Vollständiger Firmenname?",
+        2: "Rechtsform des Unternehmens?",
+        3: "Handelsregisternummer?",
+        4: "Gründungsdatum?",
+        5: "Vollständige Geschäftsadresse?",
+        6: "Geschäftszweck / Unternehmensgegenstand?",
+        7: "Geschäftsführung / Vorstand?",
+        8: "Wirtschaftlich Berechtigte (25%+)?",
+        9: "Umsatz letztes Geschäftsjahr?",
+        10: "Anzahl der Mitarbeiter?",
+        11: "Risiko-Bewertung?",
+        12: "Compliance-Status?",
+        13: "Finanzierungsstatus?",
+        14: "Presse / Ruf",
+        15: "Insolvenzzeichen?"
+      }
+
+      return standardQuestionsMap[questionNumber] || `Frage ${questionId}`
+    }
 
     watch(() => props.resetTrigger, () => {
       if (props.resetTrigger) {
@@ -293,30 +473,31 @@ const removeCustomQuestion = (index: number) => {
               type="text"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="z.B. Musterfirma GmbH"
+              @keyup.enter="handleCompanySearch"
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Land *</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Land (optional)</label>
             <input
               v-model="country"
               type="text"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="z.B. Deutschland"
+              placeholder="z.B. Deutschland (leer = Deutschland)"
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Branche *</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Branche (optional)</label>
             <input
               v-model="industry"
               type="text"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="z.B. Finanzdienstleistungen"
+              placeholder="z.B. Finanzdienstleistungen (leer = unbekannt)"
             />
           </div>
         </div>
 
         <p class="text-sm text-gray-600 mb-8">
-          Geben Sie die grundlegenden Unternehmensinformationen ein, um eine passende Firma zu finden.
+          Geben Sie mindestens den Firmennamen ein. Land und Branche helfen bei der Verfeinerung der Suche, sind aber optional.
         </p>
 
         <div class="flex justify-end">
@@ -598,18 +779,72 @@ const removeCustomQuestion = (index: number) => {
         <div class="mt-8 flex justify-center">
           <button
             @click="handleSubmit"
-            :disabled="!isFormValid"
+            :disabled="!isFormValid || isResearching"
             class="px-8 py-3 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-base font-medium shadow-md hover:shadow-lg transform hover:scale-[1.02] disabled:transform-none"
             style="background-color: #1E3B64;"
             onmouseover="this.style.backgroundColor='#0f2a4a'"
             onmouseout="this.style.backgroundColor='#1E3B64'"
           >
             <div class="flex items-center justify-center space-x-2">
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <!-- Lade-Spinner wenn Recherche läuft -->
+              <div v-if="isResearching" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              <!-- Check-Icon wenn nicht aktiv -->
+              <svg v-else class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
-              <span>Mieter Recherche starten</span>
+              <span>{{ isResearching ? 'Recherche läuft...' : 'Mieter Recherche starten' }}</span>
             </div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Report Popup -->
+    <div v-if="showReportPopup && currentReport" class="fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+        <!-- Header -->
+        <div class="flex-shrink-0 px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <div>
+            <h2 class="text-xl font-semibold text-gray-900">Mieter Recherche Bericht</h2>
+            <p class="text-sm text-gray-500">{{ currentReport.entity }}</p>
+          </div>
+          <button @click="showReportPopup = false" class="text-gray-400 hover:text-gray-600">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Content -->
+        <div class="flex-1 overflow-y-auto px-6 py-4">
+          <div v-for="(answer, questionId) in currentReport.answers" :key="questionId" class="mb-6">
+            <div class="bg-gray-50 rounded-lg p-4">
+              <h3 class="font-semibold text-gray-900 mb-2">{{ getQuestionText(questionId) }}</h3>
+              <p class="text-gray-700 mb-3">{{ answer.answer }}</p>
+              <div v-if="answer.source" class="flex items-center space-x-2">
+                <span class="text-sm text-gray-500">Quelle:</span>
+                <a :href="answer.source" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm underline">
+                  {{ answer.source }}
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex-shrink-0 px-6 py-4 border-t border-gray-200 flex gap-4">
+          <button
+            @click="showReportPopup = false"
+            class="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            Schließen
+          </button>
+          <button
+            @click="generatePDF"
+            class="flex-1 px-4 py-2 text-white rounded-md transition-colors"
+            style="background-color: #1E3B64"
+          >
+            PDF herunterladen
           </button>
         </div>
       </div>

@@ -1,0 +1,78 @@
+# SearXNG Configuration für Docker-Bereitstellung
+# Basierend auf https://docs.searxng.org/admin/installation-searxng.html
+
+use_default_settings: true
+
+general:
+  debug: false
+  instance_name: "KYC Research SearXNG"
+  privacypolicy_url: false
+  donation_url: false
+  contact_url: false
+  enable_metrics: true
+  open_metrics: ''
+
+brand:
+  new_issue_url: https://github.com/searxng/searxng/issues/new
+  docs_url: https://docs.searxng.org/
+  public_instances: https://searx.space
+  wiki_url: https://github.com/searxng/searxng/wiki
+  issue_url: https://github.com/searxng/searxng/issues
+
+search:
+  safe_search: 0  # Keine Filterung für Forschung
+  autocomplete: 'duckduckgo'  # Autocomplete für bessere UX
+  autocomplete_min: 3
+  default_lang: "de"  # Deutsch als Standard
+  ban_time_on_fail: 2  # Schnellere Wiederholung
+  max_ban_time_on_fail: 30  # Kurzere Sperrzeiten
+  suspended_times:
+    SearxEngineAccessDenied: 300  # 5 Min Sperre bei 403
+    SearxEngineTooManyRequests: 120  # 2 Min Sperre bei Rate-Limit
+    SearxEngineCaptcha: 600
+    cf_SearxEngineCaptcha: 600  # Cloudflare CAPTCHA
+    cf_SearxEngineAccessDenied: 300
+  formats:
+    - html
+    - json  # Für API-Zugriff wichtig
+
+server:
+  secret_key: "kyc-research-secret-key-2025-super-secure"
+  limiter: false  # Keine Rate-Limits für eigenen API-Zugriff
+  image_proxy: true
+  base_url: http://localhost:8080/  # Wird durch ENV überschrieben
+  
+ui:
+  query_in_title: false
+  infinite_scroll: false
+  center_alignment: false
+  theme_args:
+    simple_style: auto
+  search_on_category_select: true
+  hotkeys: default
+  url_formatting: pretty
+
+redis:
+  url: redis://redis:6379/0
+
+outgoing:
+  request_timeout: 8.0  # Längere Timeouts für API-Requests
+  max_request_timeout: 15.0
+  pool_connections: 50
+  pool_maxsize: 20
+  enable_http2: true
+  useragent_suffix: "KYC-Research/1.0"  # Erkennbares User-Agent
+
+plugins:
+  searx.plugins.calculator.SXNGPlugin:
+    active: true
+  searx.plugins.hash_plugin.SXNGPlugin:
+    active: false  # Nicht benötigt für Unternehmensrecherche
+  searx.plugins.self_info.SXNGPlugin:
+    active: false
+  searx.plugins.unit_converter.SXNGPlugin:
+    active: false
+  searx.plugins.tracker_url_remover.SXNGPlugin:
+    active: true
+  searx.plugins.hostnames.SXNGPlugin:
+    active: true

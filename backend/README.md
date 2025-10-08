@@ -1,11 +1,15 @@
 # KYC Research API Backend
 
-FastAPI-based backend for the Mieter Recherche Quick Check system.
+FastAPI-based backend for the Mieter Recherche Quick Check system with SearXNG integration and LLM enhancement.
 
 ## Features
 
-- **Tenant Verification** (`/verify`) - Verify mieter names with ambiguous result handling
-- **KYC Research** (`/research`) - Conduct comprehensive company research
+- **Tenant Verification** (`/verify`) - Verify mieter names with real search results
+- **KYC Research** (`/research`) - Conduct comprehensive company research with web crawling
+- **SearXNG Integration** - Real web search capabilities
+- **LLM Enhancement** - Ollama integration for intelligent answer analysis
+- **Web Crawling** - Deep content extraction from search results
+- **Quality Scoring** - Automatic selection of best answers
 - **CORS Support** - Frontend integration enabled
 - **Structured Responses** - German field names (mieter, fragen, antworten, etc.)
 
@@ -14,16 +18,26 @@ FastAPI-based backend for the Mieter Recherche Quick Check system.
 ### Prerequisites
 - Python 3.9+
 - pip
+- Docker (optional, for local SearXNG instance)
 
 ### Installation
 
 ```bash
 # Create virtual environment
 python3 -m venv venv
-source venv/bin/activate
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
+```
+
+### Optional: Start SearXNG (Recommended)
+
+For better search results, start a local SearXNG instance:
+
+```bash
+# From project root
+./start_searxng_server.sh
 ```
 
 ### Running the Server
@@ -33,7 +47,7 @@ pip install -r requirements.txt
 source venv/bin/activate
 
 # Start server
-python main.py
+python main_searxng.py
 ```
 
 The server will start at `http://localhost:8000`
@@ -58,7 +72,7 @@ Content-Type: application/json
 
 {
   "mieter": "Test GmbH",
-  "fragen": ["q1", "q2"],
+  "fragen": [1, 2],
   "land": "Deutschland",
   "branche": "Technologie"
 }
@@ -75,7 +89,7 @@ Content-Type: application/json
 
 {
   "mieter": "Test GmbH",
-  "fragen": ["q1", "q2", "q3"],
+  "fragen": [1, 2, 3],
   "land": "Deutschland", 
   "branche": "Technologie"
 }
@@ -90,11 +104,9 @@ Content-Type: application/json
   "antworten": [
     {
       "frage_id": "q1",
-      "frage_text": "Wie ist die aktuelle Geschäftsentwicklung?",
-      "antwort": "Das Unternehmen zeigt eine positive Geschäftsentwicklung...",
-      "quelle": "Handelsregister",
-      "quelle_link": "https://handelsregister.de/Test GmbH/q1",
-      "kategorie": "financial"
+      "frage_text": "Vollständiger Firmenname?",
+      "antwort": "Test GmbH - Gesellschaft mit beschränkter Haftung",
+      "quelle": "https://www.handelsregister.de"
     }
   ]
 }
@@ -103,20 +115,19 @@ Content-Type: application/json
 ## Question Categories
 
 Available question categories:
-- `standard` - Standard research questions
+- `standard` - Standard research questions (1-15)
 - `compliance` - Compliance-related questions
 - `financial` - Financial analysis questions
 - `reputation` - Reputation and market analysis
 - `custom` - Custom questions
 
-## Mock Data Sources
+## Search Integration
 
-The backend generates realistic mock data from sources like:
-- Handelsregister
-- Bundesanzeiger
-- Creditreform
-- Schufa
-- Aktenzeichen
+The backend uses:
+- **SearXNG** - Metasearch engine for web search
+- **Web Crawling** - Content extraction from search results
+- **LLM Enhancement** - Ollama for intelligent answer analysis
+- **Fallback Mechanisms** - Intelligent responses when search fails
 
 ## Frontend Integration
 
@@ -126,23 +137,14 @@ The API is configured with CORS to work with the Vue.js frontend running on:
 
 The frontend communicates with these endpoints through the `kycApi` client in `/src/api/kyc.ts`.
 
-## Testing
-
-Run the integration test script:
-
-```bash
-# Install test dependencies
-pip install requests
-
-# Run tests
-python test_integration.py
-```
-
 ## Development
 
 The backend uses:
 - **FastAPI** - Modern Python web framework
 - **Pydantic** - Data validation and serialization
 - **Uvicorn** - ASGI server
+- **httpx** - Async HTTP client
+- **BeautifulSoup4** - HTML parsing
+- **SearXNG** - Web search integration
 
 For development, the server auto-reloads on file changes.

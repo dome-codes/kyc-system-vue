@@ -76,15 +76,41 @@ export const generateKycReportPDF = (report: KycReport): void => {
       yPosition = 20
     }
 
-    const questionText = report.questions?.find(q => q.id === questionId)?.text || questionId
-    const source = report.sources?.[questionId] || ''
-    const sourceLink = report.sources?.[questionId + '_link'] || ''
+    const questionText = report.questions?.find(q => q.schemaQuestionId === questionId || q.id === questionId)?.text || `Frage ${questionNumber}`
+
+    // Extract source from answer object if available or fallback to sources mapping
+    let source = '';
+    let sourceLink = '';
+
+    if (answer && typeof answer === 'object' && answer.quelle) {
+      // Backend provides source in answer object
+      source = answer.quelle;
+    } else {
+    // Fallback to original sources mapping
+      source = report.sources?.[questionId] || '';
+      sourceLink = report.sources?.[questionId + '_link'] || '';
+    }
 
     // Question number and text
     yPosition = addText(`${questionNumber}. ${questionText}`, 20, yPosition, 170, 11, primaryColor)
 
-    // Answer
-    yPosition = addText(`Antwort: ${answer}`, 30, yPosition, 160, 10)
+    // Answer - Handle different answer types properly
+    let answerText = '';
+    if (typeof answer === 'string') {
+      answerText = answer;
+    } else if (answer && typeof answer === 'object') {
+      // Handle answer object from backend - extract main answer text and clean up LLM formatting
+      answerText = answer.answer || answer.text || String(answer);
+
+      // Clean up LLM formatting for better PDF display
+      if (answerText.includes('🤖 **KI-Analyse')) {
+        // Replace emoji-formatted text with clean format
+        answerText = answerText.replace(/📊 /g, 'INFORMATION: ').replace(/🤖 \*\*KI-Analyse.*?\*\*:/g, 'AI-Analyse:').replace(/📈 Vertrauen: /g, '\nVertrauen: ');
+      }
+    } else {
+      answerText = String(answer || 'Keine Antwort verfügbar');
+    }
+    yPosition = addText(`Antwort: ${answerText}`, 30, yPosition, 160, 10)
 
     // Source information
     if (source) {

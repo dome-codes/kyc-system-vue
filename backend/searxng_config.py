@@ -7,14 +7,15 @@ from typing import List
 
 # SearXNG URLs - können über Environment Variables überschrieben werden
 DEFAULT_SEARXNG_URLS = [
-    "https://localhost:8080",
-    "https://searx.tuxcloud.net", 
-    "https://search.metager.org",
-    "https://searx.tiekoetter.com"
+    "http://localhost:8080",            # Lokale Docker-Instanz (HTTP!)
+    "https://searx.prvcy.eu",          # Aktuell verfügbare öffentliche Instanz
+    "https://searx.tuxcloud.net",       # Häufig verfügbar (aber oft rate-limited)
+    "https://search.metager.org",      # Alternative (manchmal down)
+    "https://searx.tiekoetter.com"      # Backup
 ]
 
 # Konfiguration per Environment Variable oder Defaults
-SEARXNG_URL = os.getenv("SEARXNG_URL", DEFAULT_SEARXNG_URLS[1])  # Fallback URL
+SEARXNG_URL = os.getenv("SEARXNG_URL", DEFAULT_SEARXNG_URLS[0])  # Lokale Instanz zuerst
 SEARXNG_ALTERNATIVE_URLS = [
     url for url in DEFAULT_SEARXNG_URLS if url != SEARXNG_URL
 ]

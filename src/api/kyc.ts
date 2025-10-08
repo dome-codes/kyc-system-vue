@@ -21,13 +21,13 @@ const api = axios.create({
 export const kycApi = {
   async createReport(entity: string, questions: KycQuestion[], land?: string, branche?: string): Promise<KycReport> {
     try {
-      // Zuerst Mieter verifizieren
-      const verifyRequest: ResearchRequest = {
-        mieter: entity,
-        land: land || undefined,
-        branche: branche || undefined,
-        fragen: questions.map(q => q.id)
-      }
+                  // Zuerst Mieter verifizieren
+                  const verifyRequest: ResearchRequest = {
+                    mieter: entity,
+                    land: land || undefined,
+                    branche: branche || undefined,
+                    fragen: questions.map(q => parseInt(q.id.replace('q', ''))) // Convert "q1" -> 1
+                  }
 
       const verifyResponse = await this.verifyTenant(verifyRequest)
 
@@ -137,6 +137,27 @@ export const kycApi = {
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(error.response?.data?.error || 'Bericht konnte nicht geladen werden')
+      }
+      throw error
+    }
+  },
+
+  async runResearch(entity: string, questions: KycQuestion[], land?: string, branche?: string): Promise<ResearchSuccess> {
+    try {
+      // Konvertiere Fragen-IDs zu Nummern für das Backend
+      const fragenNumbers = questions.map(q => parseInt(q.id.replace('q', '').replace('std_', ''))).filter(n => !isNaN(n))
+
+      const response = await api.post('/research', {
+        mieter: entity,
+        fragen: fragenNumbers,
+        land: land || 'Deutschland',
+        branche: branche || null
+      })
+
+      return response.data
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.error || 'Recherche konnte nicht durchgeführt werden')
       }
       throw error
     }

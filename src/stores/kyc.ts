@@ -80,6 +80,15 @@ export const useKycStore = defineStore('kyc', () => {
     error.value = null
   }
 
+  const generateReportPDF = async (report: KycReport) => {
+    try {
+      const { generateKycReportPDF } = await import('@/utils/pdfGenerator')
+      await generateKycReportPDF(report)
+    } catch (err) {
+      console.error('PDF-Generation failed:', err)
+    }
+  }
+
   return {
     // State
     reports,
@@ -99,6 +108,7 @@ export const useKycStore = defineStore('kyc', () => {
     deleteReport,
     searchCompanies,
     selectCompany,
-    clearError
+    clearError,
+    generateReportPDF
   }
 })
